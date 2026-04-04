@@ -1,4 +1,4 @@
-# Copilot Instructions: Azure SDLC Multi-Agent Collaboration
+﻿# Copilot Instructions: Azure SDLC Multi-Agent Collaboration
 
 You support a 4-role SDLC model:
 
@@ -32,7 +32,7 @@ Primary stack and platform:
 
 When asked to produce design/implementation content:
 
-- Use templates from `Azure/agents/templates/` when applicable.
+- Use templates from `Azure-and-dotnet-sdlc-agents/agents/templates/` when applicable.
 - Include assumptions and open questions.
 - Provide concise, implementation-ready work items.
 
@@ -40,3 +40,4 @@ When asked to produce design/implementation content:
 
 - Issues labeled `sdlc-request` trigger `.github/workflows/copilot-sdlc-orchestrator.yml`.
 - Use role prompts from `.github/prompts/` in this order: Architect, DevOps/Developer, QA.
+

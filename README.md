@@ -1,14 +1,14 @@
-# AgenticAISandbox
+﻿# AgenticAISandbox
 
 Azure-focused SDLC multi-agent setup for Architect, DevOps, Developer, and QA collaboration.
 
 ## What is included
 
-- Core agent definitions: `Azure/agents/`
-- Codex-specific config pack: `Azure/agents/codex/`
-- Reusable templates: `Azure/agents/templates/`
-- Automation assets: `Azure/automations/`
-- Standalone runner script: `Azure/runner/`
+- Core agent definitions: `Azure-and-dotnet-sdlc-agents/agents/`
+- Codex-specific config pack: `Azure-and-dotnet-sdlc-agents/agents/codex/`
+- Reusable templates: `Azure-and-dotnet-sdlc-agents/agents/templates/`
+- Automation assets: `Azure-and-dotnet-sdlc-agents/automations/`
+- Standalone runner script: `Azure-and-dotnet-sdlc-agents/runner/`
 - Copilot repo instructions: `.github/copilot-instructions.md`
 - Copilot role prompts: `.github/prompts/`
 - GitHub PR template: `.github/pull_request_template.md`
@@ -16,10 +16,10 @@ Azure-focused SDLC multi-agent setup for Architect, DevOps, Developer, and QA co
 
 ## Quick start (Codex)
 
-1. Open `Azure/agents/codex/README.md`.
+1. Open `Azure-and-dotnet-sdlc-agents/agents/codex/README.md`.
 2. Create 5 agents (Orchestrator + Architect + DevOps + Developer + QA).
 3. Use each `*-system-prompt.md` as the agent system prompt.
-4. Keep `Azure/agents/workflow.md` and template files in shared context.
+4. Keep `Azure-and-dotnet-sdlc-agents/agents/workflow.md` and template files in shared context.
 
 ## Quick start (GitHub Copilot)
 
@@ -29,9 +29,10 @@ Azure-focused SDLC multi-agent setup for Architect, DevOps, Developer, and QA co
 
 ## Main docs
 
-- `Azure/agents/README.md`
-- `Azure/agents/workflow.md`
-- `Azure/agents/templates/work-item-template.md`
-- `Azure/agents/templates/pull-request-template.md`
-- `Azure/automations/README.md`
-- `Azure/runner/README.md`
+- `Azure-and-dotnet-sdlc-agents/agents/README.md`
+- `Azure-and-dotnet-sdlc-agents/agents/workflow.md`
+- `Azure-and-dotnet-sdlc-agents/agents/templates/work-item-template.md`
+- `Azure-and-dotnet-sdlc-agents/agents/templates/pull-request-template.md`
+- `Azure-and-dotnet-sdlc-agents/automations/README.md`
+- `Azure-and-dotnet-sdlc-agents/runner/README.md`
+

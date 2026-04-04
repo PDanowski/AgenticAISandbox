@@ -36,3 +36,7 @@ When asked to produce design/implementation content:
 - Include assumptions and open questions.
 - Provide concise, implementation-ready work items.
 
+## Automation trigger
+
+- Issues labeled `sdlc-request` trigger `.github/workflows/copilot-sdlc-orchestrator.yml`.
+- Use role prompts from `.github/prompts/` in this order: Architect, DevOps/Developer, QA.

@@ -1,0 +1,47 @@
+name: SDLC Feature Request
+description: Intake form for automated Architect -> DevOps/Developer -> QA flow
+title: "[SDLC] "
+labels:
+  - sdlc-request
+body:
+  - type: input
+    id: business_goal
+    attributes:
+      label: Business goal
+      description: What business outcome should this feature deliver?
+      placeholder: Improve onboarding conversion by ...
+    validations:
+      required: true
+  - type: textarea
+    id: functional_scope
+    attributes:
+      label: Functional scope
+      description: Describe expected behavior and user/system interactions.
+      placeholder: Users can ...
+    validations:
+      required: true
+  - type: textarea
+    id: nfrs
+    attributes:
+      label: Non-functional requirements
+      description: Performance, security, reliability, compliance, cost constraints.
+      placeholder: Response < 300ms p95, GDPR, ...
+    validations:
+      required: false
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Technical constraints
+      description: Existing services, APIs, architecture boundaries, deadlines.
+      placeholder: Must use existing Azure Service Bus namespace ...
+    validations:
+      required: false
+  - type: textarea
+    id: done_definition
+    attributes:
+      label: Done definition
+      description: What must be true before this is considered complete?
+      placeholder: Architecture approved, tests passing, ...
+    validations:
+      required: true
+

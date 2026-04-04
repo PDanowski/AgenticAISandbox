@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)]
     [ValidateSet("codex", "copilot")]
     [string]$Profile,
@@ -13,7 +13,7 @@ param(
     [string]$FeatureText,
 
     [Parameter(Mandatory = $false)]
-    [string]$OutDir = "Azure/automations/codex/outbox"
+    [string]$OutDir = "Azure-and-dotnet-sdlc-agents/automations/codex/outbox"
 )
 
 if (-not $env:OPENAI_API_KEY) {
@@ -41,4 +41,5 @@ else {
 }
 
 python @args
+
 

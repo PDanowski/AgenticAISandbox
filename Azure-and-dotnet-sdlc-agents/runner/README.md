@@ -1,4 +1,4 @@
-# Standalone SDLC Runner
+﻿# Standalone SDLC Runner
 
 This runner executes all agents in sequence:
 
@@ -8,7 +8,7 @@ This runner executes all agents in sequence:
 
 It supports two prompt profiles:
 
-- `codex` (uses `GitHub/agents/*`)
+- `codex` (uses `Azure-and-dotnet-sdlc-agents/agents/*`)
 - `copilot` (uses `.github/prompts/*` + `.github/copilot-instructions.md`)
 
 ## Prerequisites
@@ -20,33 +20,33 @@ It supports two prompt profiles:
 
 ```powershell
 $env:OPENAI_API_KEY = "your_api_key"
-.\GitHub\runner\run_sdlc_agents.ps1 -Profile codex -FeatureText "Build notes API with .NET 10 and GitHub Actions/Codespaces ready SDLC."
+.\Azure-and-dotnet-sdlc-agents\\runner\run_sdlc_agents.ps1 -Profile codex -FeatureText "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
 ```
 
 Run Copilot profile:
 
 ```powershell
-.\GitHub\runner\run_sdlc_agents.ps1 -Profile copilot -FeatureText "Build notes API with .NET 10 and GitHub Actions/Codespaces ready SDLC."
+.\Azure-and-dotnet-sdlc-agents\\runner\run_sdlc_agents.ps1 -Profile copilot -FeatureText "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
 ```
 
 ## Quick run (Python)
 
 ```powershell
-python .\GitHub\runner\run_sdlc_agents.py --profile codex --feature-text "Build notes API with .NET 10 and GitHub Actions/Codespaces ready SDLC."
+python .\Azure-and-dotnet-sdlc-agents\\runner\run_sdlc_agents.py --profile codex --feature-text "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
 ```
 
 Using a file input:
 
 ```powershell
-python .\GitHub\runner\run_sdlc_agents.py --profile codex --feature-file .\GitHub\automations\codex\inbox\REQ-001.md
+python .\Azure-and-dotnet-sdlc-agents\\runner\run_sdlc_agents.py --profile codex --feature-file .\Azure-and-dotnet-sdlc-agents\\automations\codex\inbox\REQ-001.md
 ```
 
 ## Output
 
 Outputs are written by default to profile-specific folders:
 
-- `codex`: `GitHub/automations/codex/outbox/`
-- `copilot`: `GitHub/automations/copilot/outbox/`
+- `codex`: `Azure-and-dotnet-sdlc-agents/automations/codex/outbox/`
+- `copilot`: `Azure-and-dotnet-sdlc-agents/automations/copilot/outbox/`
 
 Generated files:
 
@@ -60,3 +60,4 @@ Generated files:
 
 - This is an orchestrator script, not a replacement for manual architecture/PR verification.
 - Final outputs must still be reviewed manually.
+

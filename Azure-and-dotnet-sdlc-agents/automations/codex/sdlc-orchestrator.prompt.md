@@ -1,11 +1,11 @@
-Run the GitHub + .NET SDLC multi-agent lifecycle for new feature requests found in `GitHub/automations/codex/inbox/`.
+﻿Run the Azure SDLC multi-agent lifecycle for new feature requests found in `Azure-and-dotnet-sdlc-agents/automations/codex/inbox/`.
 
 For each new request file:
 
 1. Architect phase
-- Use `GitHub/agents/codex/architect-system-prompt.md` and `GitHub/agents/workflow.md`.
+- Use `Azure-and-dotnet-sdlc-agents/agents/codex/architect-system-prompt.md` and `Azure-and-dotnet-sdlc-agents/agents/workflow.md`.
 - Produce architecture overview and Mermaid diagrams (component, sequence, flow).
-- Produce work items using `GitHub/agents/templates/work-item-template.md`.
+- Produce work items using `Azure-and-dotnet-sdlc-agents/agents/templates/work-item-template.md`.
 
 2. Implementation planning phase
 - Split work into DevOps and Developer streams.
@@ -16,15 +16,17 @@ For each new request file:
 - Build test plan with smoke, API, regression, and e2e coverage where feasible.
 
 4. PR readiness phase
-- Prepare PR body using `GitHub/agents/templates/pull-request-template.md`.
+- Prepare PR body using `Azure-and-dotnet-sdlc-agents/agents/templates/pull-request-template.md`.
 - Include architecture compliance checklist and residual risks.
 
 5. Output
-- Write one consolidated output file to `GitHub/automations/codex/outbox/<RequestID>-sdlc-plan.md`.
-- Move processed input request file to `GitHub/automations/codex/processed/`.
+- Write one consolidated output file to `Azure-and-dotnet-sdlc-agents/automations/codex/outbox/<RequestID>-sdlc-plan.md`.
+- Move processed input request file to `Azure-and-dotnet-sdlc-agents/automations/codex/processed/`.
 
 Rules:
 - Keep `dev`, `test`, and `prod` separated in recommendations.
-- Assume .NET 10, GitHub Actions for CI/CD, and Codespaces/devcontainer support.
+- Assume .NET 10 and Terraform on Azure.
 - If requirements are ambiguous, list focused questions and proceed with best assumptions.
 - Final line must be: `Output must be manually verified.`
+
+

@@ -286,6 +286,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     api_key = os.environ.get("OPENAI_API_KEY")
+    model = args.model.strip() if args.model else MODEL_PRESETS[args.model_preset]
     if not api_key:
         print("ERROR: OPENAI_API_KEY is not set.", file=sys.stderr)
         return 2
@@ -323,4 +324,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-    model = args.model.strip() if args.model else MODEL_PRESETS[args.model_preset]

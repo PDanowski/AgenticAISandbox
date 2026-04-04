@@ -1,0 +1,5 @@
+name = "GitHub SDLC Orchestrator"
+status = "ACTIVE"
+rrule = "FREQ=HOURLY;INTERVAL=4"
+cwds = ["C:\\Users\\Piotrek\\Documents\\GitHub\\AgenticAISandbox"]
+prompt = "Run the prompt from C:\\Users\\Piotrek\\Documents\\GitHub\\AgenticAISandbox\\GitHub\\automations\\codex\\sdlc-orchestrator.prompt.md"

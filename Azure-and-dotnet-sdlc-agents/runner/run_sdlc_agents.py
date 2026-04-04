@@ -30,10 +30,17 @@ from typing import Dict, Tuple
 ROOT = Path(__file__).resolve().parents[2]
 PACK_ROOT = Path(__file__).resolve().parents[1]
 
-MODEL_PRESETS: Dict[str, str] = {
-    "quality": "gpt-5.4",
-    "balanced": "gpt-5.4-mini",
-    "fast": "gpt-4.1-mini",
+MODEL_PRESETS: Dict[str, Dict[str, str]] = {
+    "openai": {
+        "quality": "gpt-5.4",
+        "balanced": "gpt-5.4-mini",
+        "fast": "gpt-4.1-mini",
+    },
+    "github-models": {
+        "quality": "openai/gpt-4.1",
+        "balanced": "openai/gpt-4.1",
+        "fast": "openai/gpt-4.1",
+    },
 }
 
 
@@ -41,8 +48,8 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def call_responses_api(
-    api_key: str,
+def call_openai_api(
+    openai_api_key: str,
     model: str,
     system_prompt: str,
     user_prompt: str,
@@ -68,7 +75,7 @@ def call_responses_api(
         url,
         data=data,
         headers={
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {openai_api_key}",
             "Content-Type": "application/json",
         },
         method="POST",
@@ -93,6 +100,58 @@ def call_responses_api(
     if not text_parts:
         raise RuntimeError(f"No text output found in API response: {parsed}")
     return "\n".join(part for part in text_parts if part).strip()
+
+
+def call_github_models_api(
+    github_token: str,
+    model: str,
+    system_prompt: str,
+    user_prompt: str,
+    base_url: str = "https://models.github.ai",
+    timeout_sec: int = 180,
+    github_api_version: str = "2026-03-10",
+    github_org: str = "",
+) -> str:
+    if github_org:
+        url = f"{base_url.rstrip('/')}/orgs/{github_org}/inference/chat/completions"
+    else:
+        url = f"{base_url.rstrip('/')}/inference/chat/completions"
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {github_token}",
+            "X-GitHub-Api-Version": github_api_version,
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            raw = resp.read()
+    except urllib.error.HTTPError as exc:
+        err = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"API HTTP {exc.code}: {err}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"API connection error: {exc}") from exc
+
+    parsed = json.loads(raw.decode("utf-8"))
+    try:
+        msg = parsed["choices"][0]["message"]["content"]
+        if isinstance(msg, str):
+            return msg.strip()
+    except Exception as exc:
+        raise RuntimeError(f"No text output found in GitHub Models response: {parsed}") from exc
+    raise RuntimeError(f"No text output found in GitHub Models response: {parsed}")
 
 
 def build_prompts(profile: str) -> Dict[str, Tuple[str, str]]:
@@ -151,9 +210,36 @@ def write_output(out_dir: Path, name: str, content: str) -> Path:
     return path
 
 
-def run(profile: str, feature_text: str, model: str, out_dir: Path, api_key: str, base_url: str) -> None:
+def run(
+    profile: str,
+    provider: str,
+    feature_text: str,
+    model: str,
+    out_dir: Path,
+    token: str,
+    base_url: str,
+    github_api_version: str,
+    github_org: str,
+) -> None:
     prompts = build_prompts(profile)
     ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    if provider == "openai":
+        def call_model(system_prompt: str, user_prompt: str) -> str:
+            return call_openai_api(token, model, system_prompt, user_prompt, base_url=base_url)
+    elif provider == "github-models":
+        def call_model(system_prompt: str, user_prompt: str) -> str:
+            return call_github_models_api(
+                token,
+                model,
+                system_prompt,
+                user_prompt,
+                base_url=base_url,
+                github_api_version=github_api_version,
+                github_org=github_org,
+            )
+    else:
+        raise ValueError(f"Unknown provider: {provider}")
 
     def system(role: str) -> str:
         role_prompt, shared = prompts[role]
@@ -173,7 +259,7 @@ def run(profile: str, feature_text: str, model: str, out_dir: Path, api_key: str
         5) PR architecture checklist
         """
     ).strip()
-    architect_out = call_responses_api(api_key, model, system("architect"), arch_user, base_url=base_url)
+    architect_out = call_model(system("architect"), arch_user)
     arch_path = write_output(out_dir, f"{ts}-{profile}-architect.md", architect_out)
     print(f"[ok] architect -> {arch_path}")
 
@@ -202,8 +288,8 @@ def run(profile: str, feature_text: str, model: str, out_dir: Path, api_key: str
     ).strip()
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
-        fut_devops = ex.submit(call_responses_api, api_key, model, system("devops"), devops_user, base_url)
-        fut_developer = ex.submit(call_responses_api, api_key, model, system("developer"), developer_user, base_url)
+        fut_devops = ex.submit(call_model, system("devops"), devops_user)
+        fut_developer = ex.submit(call_model, system("developer"), developer_user)
         devops_out = fut_devops.result()
         developer_out = fut_developer.result()
 
@@ -235,7 +321,7 @@ def run(profile: str, feature_text: str, model: str, out_dir: Path, api_key: str
         5) Release recommendation criteria and residual risks
         """
     ).strip()
-    qa_out = call_responses_api(api_key, model, system("qa"), qa_user, base_url=base_url)
+    qa_out = call_model(system("qa"), qa_user)
     qa_path = write_output(out_dir, f"{ts}-{profile}-qa.md", qa_out)
     print(f"[ok] qa -> {qa_path}")
 
@@ -245,6 +331,7 @@ def run(profile: str, feature_text: str, model: str, out_dir: Path, api_key: str
 
         - Timestamp: {ts}
         - Profile: {profile}
+        - Provider: {provider}
         - Model: {model}
 
         ## Feature Request
@@ -270,6 +357,7 @@ def run(profile: str, feature_text: str, model: str, out_dir: Path, api_key: str
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Run SDLC multi-agent workflow (Architect -> DevOps/Developer -> QA).")
     p.add_argument("--profile", choices=["codex", "copilot"], default="codex")
+    p.add_argument("--provider", choices=["openai", "github-models"], default="openai")
     p.add_argument("--model", default="", help="Explicit model name. Overrides --model-preset.")
     p.add_argument("--model-preset", choices=["quality", "balanced", "fast"], default="balanced")
     p.add_argument("--feature-file", help="Path to markdown/txt file with feature request.")
@@ -279,17 +367,29 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="Output directory for generated artifacts.",
     )
-    p.add_argument("--base-url", default="https://api.openai.com/v1")
+    p.add_argument("--base-url", default="")
+    p.add_argument("--github-api-version", default="2026-03-10")
+    p.add_argument("--github-org", default="")
     return p.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    api_key = os.environ.get("OPENAI_API_KEY")
-    model = args.model.strip() if args.model else MODEL_PRESETS[args.model_preset]
-    if not api_key:
-        print("ERROR: OPENAI_API_KEY is not set.", file=sys.stderr)
-        return 2
+    provider_models = MODEL_PRESETS.get(args.provider, {})
+    model = args.model.strip() if args.model else provider_models[args.model_preset]
+
+    if args.provider == "openai":
+        token = os.environ.get("OPENAI_API_KEY", "")
+        if not token:
+            print("ERROR: OPENAI_API_KEY is not set.", file=sys.stderr)
+            return 2
+        base_url = args.base_url or "https://api.openai.com/v1"
+    else:
+        token = os.environ.get("GITHUB_TOKEN", "")
+        if not token:
+            print("ERROR: GITHUB_TOKEN is not set.", file=sys.stderr)
+            return 2
+        base_url = args.base_url or "https://models.github.ai"
 
     if bool(args.feature_file) == bool(args.feature_text):
         print("ERROR: provide exactly one of --feature-file or --feature-text.", file=sys.stderr)
@@ -309,11 +409,14 @@ def main() -> int:
     try:
         run(
             profile=args.profile,
+            provider=args.provider,
             feature_text=feature_text,
             model=model,
             out_dir=out_dir,
-            api_key=api_key,
-            base_url=args.base_url,
+            token=token,
+            base_url=base_url,
+            github_api_version=args.github_api_version,
+            github_org=args.github_org,
         )
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

@@ -8,6 +8,7 @@ Azure-focused SDLC multi-agent setup for Architect, DevOps, Developer, and QA co
 - Codex-specific config pack: `Azure/agents/codex/`
 - Reusable templates: `Azure/agents/templates/`
 - Automation assets: `Azure/automations/`
+- Standalone runner script: `Azure/runner/`
 - Copilot repo instructions: `.github/copilot-instructions.md`
 - Copilot role prompts: `.github/prompts/`
 - GitHub PR template: `.github/pull_request_template.md`
@@ -33,3 +34,4 @@ Azure-focused SDLC multi-agent setup for Architect, DevOps, Developer, and QA co
 - `Azure/agents/templates/work-item-template.md`
 - `Azure/agents/templates/pull-request-template.md`
 - `Azure/automations/README.md`
+- `Azure/runner/README.md`

@@ -3,6 +3,10 @@ param(
     [ValidateSet("codex", "copilot")]
     [string]$Profile,
 
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("openai", "github-models")]
+    [string]$Provider = "openai",
+
     # Optional explicit model name (overrides -ModelPreset).
     # Examples:
     # -Model "gpt-5.4"      -> best quality for complex architecture/review output
@@ -25,8 +29,12 @@ param(
     [string]$OutDir = ""
 )
 
-if (-not $env:OPENAI_API_KEY) {
-    throw "OPENAI_API_KEY environment variable is required."
+if ($Provider -eq "openai" -and -not $env:OPENAI_API_KEY) {
+    throw "OPENAI_API_KEY environment variable is required for -Provider openai."
+}
+
+if ($Provider -eq "github-models" -and -not $env:GITHUB_TOKEN) {
+    throw "GITHUB_TOKEN environment variable is required for -Provider github-models."
 }
 
 if ([string]::IsNullOrWhiteSpace($FeatureFile) -eq [string]::IsNullOrWhiteSpace($FeatureText)) {
@@ -42,6 +50,7 @@ if ([string]::IsNullOrWhiteSpace($OutDir)) {
 $args = @(
     $scriptPath,
     "--profile", $Profile,
+    "--provider", $Provider,
     "--model-preset", $ModelPreset,
     "--out-dir", $OutDir
 )

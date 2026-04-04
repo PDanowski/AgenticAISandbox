@@ -28,6 +28,13 @@ from typing import Dict, Tuple
 
 
 ROOT = Path(__file__).resolve().parents[2]
+PACK_ROOT = Path(__file__).resolve().parents[1]
+
+MODEL_PRESETS: Dict[str, str] = {
+    "quality": "gpt-5.4",
+    "balanced": "gpt-5.4-mini",
+    "fast": "gpt-4.1-mini",
+}
 
 
 def read_text(path: Path) -> str:
@@ -89,16 +96,16 @@ def call_responses_api(
 
 
 def build_prompts(profile: str) -> Dict[str, Tuple[str, str]]:
-    workflow = read_text(ROOT / "GitHub" / "agents" / "workflow.md")
-    wi_template = read_text(ROOT / "GitHub" / "agents" / "templates" / "work-item-template.md")
-    pr_template = read_text(ROOT / "GitHub" / "agents" / "templates" / "pull-request-template.md")
+    workflow = read_text(PACK_ROOT / "agents" / "workflow.md")
+    wi_template = read_text(PACK_ROOT / "agents" / "templates" / "work-item-template.md")
+    pr_template = read_text(PACK_ROOT / "agents" / "templates" / "pull-request-template.md")
 
     if profile == "codex":
         roles = {
-            "architect": read_text(ROOT / "GitHub" / "agents" / "architect-agent.md"),
-            "devops": read_text(ROOT / "GitHub" / "agents" / "devops-agent.md"),
-            "developer": read_text(ROOT / "GitHub" / "agents" / "developer-agent.md"),
-            "qa": read_text(ROOT / "GitHub" / "agents" / "qa-agent.md"),
+            "architect": read_text(PACK_ROOT / "agents" / "architect-agent.md"),
+            "devops": read_text(PACK_ROOT / "agents" / "devops-agent.md"),
+            "developer": read_text(PACK_ROOT / "agents" / "developer-agent.md"),
+            "qa": read_text(PACK_ROOT / "agents" / "qa-agent.md"),
         }
         shared = "\n\n".join(
             [
@@ -263,7 +270,8 @@ def run(profile: str, feature_text: str, model: str, out_dir: Path, api_key: str
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Run SDLC multi-agent workflow (Architect -> DevOps/Developer -> QA).")
     p.add_argument("--profile", choices=["codex", "copilot"], default="codex")
-    p.add_argument("--model", default="gpt-4.1")
+    p.add_argument("--model", default="", help="Explicit model name. Overrides --model-preset.")
+    p.add_argument("--model-preset", choices=["quality", "balanced", "fast"], default="balanced")
     p.add_argument("--feature-file", help="Path to markdown/txt file with feature request.")
     p.add_argument("--feature-text", help="Feature request text (alternative to --feature-file).")
     p.add_argument(
@@ -294,14 +302,14 @@ def main() -> int:
     if args.out_dir:
         out_dir = Path(args.out_dir).resolve()
     else:
-        profile_out = ROOT / "GitHub" / "automations" / args.profile / "outbox"
+        profile_out = PACK_ROOT / "automations" / args.profile / "outbox"
         out_dir = profile_out.resolve()
 
     try:
         run(
             profile=args.profile,
             feature_text=feature_text,
-            model=args.model,
+            model=model,
             out_dir=out_dir,
             api_key=api_key,
             base_url=args.base_url,
@@ -315,3 +323,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+    model = args.model.strip() if args.model else MODEL_PRESETS[args.model_preset]

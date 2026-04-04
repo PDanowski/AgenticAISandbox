@@ -16,29 +16,37 @@ It supports two prompt profiles:
 - Python 3.10+
 - `OPENAI_API_KEY` set in environment
 
+## Model selection
+
+- Presets:
+  - `quality` -> `gpt-5.4`
+  - `balanced` -> `gpt-5.4-mini` (default)
+  - `fast` -> `gpt-4.1-mini`
+- You can also pass explicit model name with `-Model` / `--model`.
+
 ## Quick run (PowerShell)
 
 ```powershell
 $env:OPENAI_API_KEY = "your_api_key"
-.\Azure-and-dotnet-sdlc-agents\\runner\run_sdlc_agents.ps1 -Profile codex -FeatureText "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
+.\Azure-and-dotnet-sdlc-agents\runner\run_sdlc_agents.ps1 -Profile codex -ModelPreset quality -FeatureText "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
 ```
 
 Run Copilot profile:
 
 ```powershell
-.\Azure-and-dotnet-sdlc-agents\\runner\run_sdlc_agents.ps1 -Profile copilot -FeatureText "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
+.\Azure-and-dotnet-sdlc-agents\runner\run_sdlc_agents.ps1 -Profile copilot -Model gpt-5.4 -FeatureText "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
 ```
 
 ## Quick run (Python)
 
 ```powershell
-python .\Azure-and-dotnet-sdlc-agents\\runner\run_sdlc_agents.py --profile codex --feature-text "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
+python .\Azure-and-dotnet-sdlc-agents\runner\run_sdlc_agents.py --profile codex --model-preset quality --feature-text "Build notes API with .NET 10, Azure SQL, outbox and Service Bus."
 ```
 
 Using a file input:
 
 ```powershell
-python .\Azure-and-dotnet-sdlc-agents\\runner\run_sdlc_agents.py --profile codex --feature-file .\Azure-and-dotnet-sdlc-agents\\automations\codex\inbox\REQ-001.md
+python .\Azure-and-dotnet-sdlc-agents\runner\run_sdlc_agents.py --profile codex --model gpt-5.4 --feature-file .\Azure-and-dotnet-sdlc-agents\automations\codex\inbox\REQ-001.md
 ```
 
 ## Output

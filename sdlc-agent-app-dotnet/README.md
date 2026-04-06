@@ -13,6 +13,12 @@ Flow:
 
 The app asks for required inputs and approvals and prints generated output paths.
 
+## Configuration
+
+All runtime configuration (packs, provider URLs, token env names, model presets) is in:
+
+- `sdlc-agent-app-dotnet/appsettings.json`
+
 ## Run locally
 
 Prerequisites:

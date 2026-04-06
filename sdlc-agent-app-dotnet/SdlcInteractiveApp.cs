@@ -16,23 +16,24 @@ public static class SdlcInteractiveApp
 
             var resolver = new PathResolver();
             var repoRoot = resolver.FindRepoRoot();
+            var appConfig = AppConfig.LoadFromFile(Path.Combine(repoRoot, "sdlc-agent-app-dotnet", "appsettings.json"));
 
-            var packKey = ui.AskChoice("Pack", ["github", "azure"], "github");
+            var packKey = ui.AskChoice("Pack", appConfig.Packs.Keys.Order().ToList(), "github");
             var profile = ui.AskChoice("Profile", ["codex", "copilot"], "codex");
-            var provider = ui.AskChoice("Provider", ["openai", "github-models"], "openai");
+            var provider = ui.AskChoice("Provider", appConfig.Providers.Keys.Order().ToList(), "openai");
             var preset = ui.AskChoice("Model preset", ["quality", "balanced", "fast"], "balanced");
 
             Console.Write("Explicit model (optional, press Enter to use preset): ");
             var explicitModel = (Console.ReadLine() ?? string.Empty).Trim();
             var model = string.IsNullOrWhiteSpace(explicitModel)
-                ? AppConstants.ModelPresets[provider][preset]
+                ? appConfig.ModelPresets[provider][preset]
                 : explicitModel;
 
-            var packRoot = Path.Combine(repoRoot, AppConstants.Packs[packKey]);
+            var packRoot = Path.Combine(repoRoot, appConfig.Packs[packKey]);
             var outDir = Path.Combine(packRoot, "automations", profile, "outbox");
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
 
-            var modelClient = BuildClient(ui, provider);
+            var modelClient = BuildClient(ui, provider, appConfig);
             var promptLoader = new PromptLoader();
             var prompts = promptLoader.BuildPrompts(repoRoot, packRoot, profile);
             var feature = ui.AskMultiLine("Feature request");
@@ -62,38 +63,40 @@ public static class SdlcInteractiveApp
         }
     }
 
-    private static IModelClient BuildClient(ConsoleUi ui, string provider)
+    private static IModelClient BuildClient(ConsoleUi ui, string provider, AppConfig appConfig)
     {
+        var providerCfg = appConfig.Providers[provider];
         if (provider == "openai")
         {
-            var token = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? string.Empty;
+            var token = Environment.GetEnvironmentVariable(providerCfg.TokenEnv) ?? string.Empty;
             if (string.IsNullOrWhiteSpace(token))
             {
-                throw new InvalidOperationException("OPENAI_API_KEY is not set.");
+                throw new InvalidOperationException($"{providerCfg.TokenEnv} is not set.");
             }
             Console.Write("OpenAI base URL (optional): ");
             var baseUrl = (Console.ReadLine() ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(baseUrl))
             {
-                baseUrl = "https://api.openai.com/v1";
+                baseUrl = providerCfg.BaseUrl;
             }
-            return new OpenAiClient(new HttpClient(), token, baseUrl);
+            var client = new HttpClient { Timeout = TimeSpan.FromSeconds(providerCfg.TimeoutSec) };
+            return new OpenAiClient(client, token, baseUrl);
         }
 
-        var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? string.Empty;
+        var githubToken = Environment.GetEnvironmentVariable(providerCfg.TokenEnv) ?? string.Empty;
         if (string.IsNullOrWhiteSpace(githubToken))
         {
-            throw new InvalidOperationException("GITHUB_TOKEN is not set.");
+            throw new InvalidOperationException($"{providerCfg.TokenEnv} is not set.");
         }
         Console.Write("GitHub Models base URL (optional): ");
         var ghBaseUrl = (Console.ReadLine() ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(ghBaseUrl))
         {
-            ghBaseUrl = "https://models.github.ai";
+            ghBaseUrl = providerCfg.BaseUrl;
         }
         Console.Write("GitHub org (optional): ");
         var githubOrg = (Console.ReadLine() ?? string.Empty).Trim();
-        return new GitHubModelsClient(new HttpClient(), githubToken, ghBaseUrl, githubOrg);
+        var ghClient = new HttpClient { Timeout = TimeSpan.FromSeconds(providerCfg.TimeoutSec) };
+        return new GitHubModelsClient(ghClient, githubToken, ghBaseUrl, githubOrg, providerCfg.GitHubApiVersion);
     }
 }
-

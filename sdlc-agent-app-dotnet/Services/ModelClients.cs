@@ -81,7 +81,7 @@ public sealed class GitHubModelsClient(
     string token,
     string baseUrl,
     string githubOrg,
-    string githubApiVersion = "2026-03-10") : IModelClient
+    string githubApiVersion) : IModelClient
 {
     public async Task<string> CallAsync(string model, string systemPrompt, string userPrompt)
     {
@@ -125,4 +125,3 @@ public sealed class GitHubModelsClient(
         return content.Trim();
     }
 }
-

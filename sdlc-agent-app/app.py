@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import sys
 
-from config import MODEL_PRESETS, PACKS, ROOT
+from config import ROOT, load_app_config
 from prompts import build_prompts
 from providers import GitHubModelsClient, OpenAiClient
 from ui import ask_choice, ask_multiline
@@ -13,32 +13,40 @@ from workflow import WorkflowRunner
 
 def main() -> int:
     print("\nSDLC Agent App (interactive)\n")
+    cfg = load_app_config()
     pack_key = ask_choice("Pack", ("github", "azure"), "github")
     profile = ask_choice("Profile", ("codex", "copilot"), "codex")
     provider = ask_choice("Provider", ("openai", "github-models"), "openai")
     preset = ask_choice("Model preset", ("quality", "balanced", "fast"), "balanced")
 
     custom_model = input("Explicit model (optional, press Enter to use preset): ").strip()
-    model = custom_model if custom_model else MODEL_PRESETS[provider][preset]
+    model = custom_model if custom_model else cfg.model_presets[provider][preset]
 
-    pack_root = PACKS[pack_key]
+    pack_root = cfg.packs[pack_key]
     out_dir = pack_root / "automations" / profile / "outbox"
+    provider_cfg = cfg.providers[provider]
 
     if provider == "openai":
-        token = (os.environ.get("OPENAI_API_KEY") or "").strip()
+        token = (os.environ.get(provider_cfg.token_env) or "").strip()
         if not token:
-            print("ERROR: OPENAI_API_KEY is not set.")
+            print(f"ERROR: {provider_cfg.token_env} is not set.")
             return 2
-        base_url = input("OpenAI base URL (optional): ").strip() or "https://api.openai.com/v1"
-        client = OpenAiClient(api_key=token, base_url=base_url)
+        base_url = input("OpenAI base URL (optional): ").strip() or provider_cfg.base_url
+        client = OpenAiClient(api_key=token, base_url=base_url, timeout_sec=provider_cfg.timeout_sec)
     else:
-        token = (os.environ.get("GITHUB_TOKEN") or "").strip()
+        token = (os.environ.get(provider_cfg.token_env) or "").strip()
         if not token:
-            print("ERROR: GITHUB_TOKEN is not set.")
+            print(f"ERROR: {provider_cfg.token_env} is not set.")
             return 2
-        base_url = input("GitHub Models base URL (optional): ").strip() or "https://models.github.ai"
+        base_url = input("GitHub Models base URL (optional): ").strip() or provider_cfg.base_url
         github_org = input("GitHub org (optional, for org-scoped endpoint): ").strip()
-        client = GitHubModelsClient(token=token, base_url=base_url, github_org=github_org)
+        client = GitHubModelsClient(
+            token=token,
+            base_url=base_url,
+            github_api_version=provider_cfg.github_api_version,
+            github_org=github_org,
+            timeout_sec=provider_cfg.timeout_sec,
+        )
 
     prompts = build_prompts(ROOT, pack_root, profile)
     feature = ask_multiline("Feature request")

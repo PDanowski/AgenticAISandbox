@@ -13,7 +13,7 @@ class ModelClient(ABC):
 
 
 class OpenAiClient(ModelClient):
-    def __init__(self, api_key: str, base_url: str, timeout_sec: int = 240) -> None:
+    def __init__(self, api_key: str, base_url: str, timeout_sec: int) -> None:
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.timeout_sec = timeout_sec
@@ -55,9 +55,9 @@ class GitHubModelsClient(ModelClient):
         self,
         token: str,
         base_url: str,
-        github_api_version: str = "2026-03-10",
-        github_org: str = "",
-        timeout_sec: int = 240,
+        github_api_version: str,
+        github_org: str,
+        timeout_sec: int,
     ) -> None:
         self.token = token
         self.base_url = base_url.rstrip("/")
@@ -107,4 +107,3 @@ def _send(req: urllib.request.Request, timeout_sec: int) -> dict:
         raise RuntimeError(f"API HTTP {exc.code}: {err}") from exc
     except urllib.error.URLError as exc:
         raise RuntimeError(f"API connection error: {exc}") from exc
-

@@ -1,0 +1,32 @@
+{
+  "packs": {
+    "github": "GitHub-and-dotnet-sdlc-agents",
+    "azure": "Azure-and-dotnet-sdlc-agents"
+  },
+  "providers": {
+    "openai": {
+      "token_env": "OPENAI_API_KEY",
+      "base_url": "https://api.openai.com/v1",
+      "timeout_sec": 240
+    },
+    "github-models": {
+      "token_env": "GITHUB_TOKEN",
+      "base_url": "https://models.github.ai",
+      "github_api_version": "2026-03-10",
+      "timeout_sec": 240
+    }
+  },
+  "model_presets": {
+    "openai": {
+      "quality": "gpt-5.4",
+      "balanced": "gpt-5.4-mini",
+      "fast": "gpt-4.1-mini"
+    },
+    "github-models": {
+      "quality": "openai/gpt-4.1",
+      "balanced": "openai/gpt-4.1",
+      "fast": "openai/gpt-4.1"
+    }
+  }
+}
+

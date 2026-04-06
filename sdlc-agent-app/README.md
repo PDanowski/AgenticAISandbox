@@ -11,6 +11,12 @@ Simple interactive app that runs the SDLC agent flow with approval gates:
 
 The app asks for required user input/approvals and prints generated output paths.
 
+## Configuration
+
+All runtime configuration (packs, provider URLs, token env names, model presets) is in:
+
+- `sdlc-agent-app/settings.json`
+
 ## Run locally
 
 Prerequisites:

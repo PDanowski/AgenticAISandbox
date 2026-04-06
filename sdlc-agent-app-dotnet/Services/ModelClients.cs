@@ -18,28 +18,37 @@ public sealed class OpenAiClient(string apiKey, string baseUrl) : IModelClient
 
     public async Task<string> CallAsync(string model, string systemPrompt, string userPrompt)
     {
-        var options = new OpenAIClientOptions();
-        if (!string.IsNullOrWhiteSpace(_baseUrl))
+        try
         {
-            options.Endpoint = new Uri(_baseUrl);
+            var options = new OpenAIClientOptions();
+            if (!string.IsNullOrWhiteSpace(_baseUrl))
+            {
+                options.Endpoint = new Uri(_baseUrl);
+            }
+
+            var openAiClient = new OpenAIClient(new ApiKeyCredential(_apiKey), options);
+            IChatClient chatClient = openAiClient.GetChatClient(model).AsIChatClient();
+
+            var response = await chatClient.GetResponseAsync(
+                [
+                    new ChatMessage(ChatRole.System, systemPrompt),
+                    new ChatMessage(ChatRole.User, userPrompt),
+                ]);
+
+            var text = response.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new InvalidOperationException("No text output found in OpenAI chat response.");
+            }
+
+            return text;
         }
-
-        var openAiClient = new OpenAIClient(new ApiKeyCredential(_apiKey), options);
-        IChatClient chatClient = openAiClient.GetChatClient(model).AsIChatClient();
-
-        var response = await chatClient.GetResponseAsync(
-            [
-                new ChatMessage(ChatRole.System, systemPrompt),
-                new ChatMessage(ChatRole.User, userPrompt),
-            ]);
-
-        var text = response.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(text))
+        catch (Exception ex) when (ex.Message.Contains("SSL connection", StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("No text output found in OpenAI chat response.");
+            throw new InvalidOperationException(
+                "TLS/SSL handshake failed. Check corporate proxy/certificate trust for .NET runtime and endpoint access.",
+                ex);
         }
-
-        return text;
     }
 }
 
@@ -72,7 +81,17 @@ public sealed class GitHubModelsClient(
         req.Headers.Add("X-GitHub-Api-Version", githubApiVersion);
         req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 
-        using var resp = await http.SendAsync(req);
+        HttpResponseMessage resp;
+        try
+        {
+            resp = await http.SendAsync(req);
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("SSL connection", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "TLS/SSL handshake failed. Check corporate proxy/certificate trust for .NET runtime and endpoint access.",
+                ex);
+        }
         var txt = await resp.Content.ReadAsStringAsync();
         if (!resp.IsSuccessStatusCode)
         {

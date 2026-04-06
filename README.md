@@ -51,6 +51,11 @@ Model selection:
 - `sdlc-agent-app/README.md`
 - `sdlc-agent-azure-ai-foundry/README.md`
 
+## Azure deployment option
+
+- GitHub Actions + Bicep workflow: `.github/workflows/sdlc-agent-azure-foundry-deploy.yml`
+- Bicep source: `sdlc-agent-azure-ai-foundry/infra/bicep/main.bicep`
+
 ## Interactive app alternative
 
 If you prefer guided interaction with explicit approval gates, use:

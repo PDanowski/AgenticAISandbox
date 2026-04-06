@@ -1,0 +1,284 @@
+name: Deploy SDLC Agent (Azure + Bicep)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+      azure_location:
+        description: "Azure location"
+        required: true
+        default: "westeurope"
+        type: string
+      resource_group:
+        description: "Azure resource group name"
+        required: true
+        default: "rg-sdlc-agent-dev"
+        type: string
+      name_prefix:
+        description: "Resource name prefix"
+        required: true
+        default: "sdlc-agent-dev"
+        type: string
+      acr_name:
+        description: "Globally unique ACR name (alphanumeric)"
+        required: true
+        type: string
+      foundry_project_endpoint:
+        description: "Optional Azure AI Foundry endpoint"
+        required: false
+        default: ""
+        type: string
+      foundry_model_deployment:
+        description: "Optional Foundry model deployment"
+        required: false
+        default: ""
+        type: string
+      foundry_managed_identity_client_id:
+        description: "Optional user-assigned MI client ID"
+        required: false
+        default: ""
+        type: string
+      bootstrap_foundry:
+        description: "Create/update Foundry resource + project + model deployment"
+        required: true
+        default: true
+        type: boolean
+      foundry_resource_name:
+        description: "Foundry (AIServices) resource name"
+        required: false
+        default: ""
+        type: string
+      foundry_project_name:
+        description: "Foundry project name"
+        required: false
+        default: ""
+        type: string
+      foundry_model_name:
+        description: "Model name for deployment (e.g. Phi-4-mini-instruct)"
+        required: false
+        default: ""
+        type: string
+      foundry_model_version:
+        description: "Model version (e.g. 1)"
+        required: false
+        default: ""
+        type: string
+      foundry_model_provider:
+        description: "Model provider/format (e.g. Microsoft, OpenAI)"
+        required: false
+        default: ""
+        type: string
+      foundry_deployment_name:
+        description: "Deployment name to create/use in Foundry"
+        required: false
+        default: ""
+        type: string
+      foundry_sku_name:
+        description: "Foundry model deployment SKU (e.g. GlobalStandard)"
+        required: false
+        default: "GlobalStandard"
+        type: string
+      foundry_sku_capacity:
+        description: "Foundry model deployment capacity"
+        required: false
+        default: "1"
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  PROJECT_DIR: sdlc-agent-azure-ai-foundry
+  BICEP_FILE: sdlc-agent-azure-ai-foundry/infra/bicep/main.bicep
+  PARAMS_DIR: sdlc-agent-azure-ai-foundry/infra/bicep/params
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Ensure Resource Group
+        run: |
+          az group create \
+            --name "${{ inputs.resource_group }}" \
+            --location "${{ inputs.azure_location }}"
+
+      - name: Bootstrap Azure AI Foundry (optional)
+        if: ${{ inputs.bootstrap_foundry }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${{ inputs.foundry_resource_name }}" ] || \
+             [ -z "${{ inputs.foundry_project_name }}" ] || \
+             [ -z "${{ inputs.foundry_model_name }}" ] || \
+             [ -z "${{ inputs.foundry_model_version }}" ] || \
+             [ -z "${{ inputs.foundry_model_provider }}" ] || \
+             [ -z "${{ inputs.foundry_deployment_name }}" ]; then
+            echo "bootstrap_foundry=true requires foundry_resource_name, foundry_project_name, foundry_model_name, foundry_model_version, foundry_model_provider, and foundry_deployment_name."
+            exit 1
+          fi
+
+          az extension add -n cognitiveservices --upgrade
+
+          if az cognitiveservices account show \
+            --name "${{ inputs.foundry_resource_name }}" \
+            --resource-group "${{ inputs.resource_group }}" >/dev/null 2>&1; then
+            echo "Foundry resource already exists."
+          else
+            az cognitiveservices account create \
+              --name "${{ inputs.foundry_resource_name }}" \
+              --resource-group "${{ inputs.resource_group }}" \
+              --kind AIServices \
+              --sku S0 \
+              --location "${{ inputs.azure_location }}" \
+              --allow-project-management
+          fi
+
+          az cognitiveservices account update \
+            --name "${{ inputs.foundry_resource_name }}" \
+            --resource-group "${{ inputs.resource_group }}" \
+            --custom-domain "${{ inputs.foundry_resource_name }}"
+
+          if az cognitiveservices account project show \
+            --name "${{ inputs.foundry_resource_name }}" \
+            --resource-group "${{ inputs.resource_group }}" \
+            --project-name "${{ inputs.foundry_project_name }}" >/dev/null 2>&1; then
+            echo "Foundry project already exists."
+          else
+            az cognitiveservices account project create \
+              --name "${{ inputs.foundry_resource_name }}" \
+              --resource-group "${{ inputs.resource_group }}" \
+              --project-name "${{ inputs.foundry_project_name }}" \
+              --location "${{ inputs.azure_location }}"
+          fi
+
+          if az cognitiveservices account deployment show \
+            --name "${{ inputs.foundry_resource_name }}" \
+            --resource-group "${{ inputs.resource_group }}" \
+            --deployment-name "${{ inputs.foundry_deployment_name }}" >/dev/null 2>&1; then
+            echo "Foundry model deployment already exists."
+          else
+            az cognitiveservices account deployment create \
+              --name "${{ inputs.foundry_resource_name }}" \
+              --resource-group "${{ inputs.resource_group }}" \
+              --deployment-name "${{ inputs.foundry_deployment_name }}" \
+              --model-name "${{ inputs.foundry_model_name }}" \
+              --model-version "${{ inputs.foundry_model_version }}" \
+              --model-format "${{ inputs.foundry_model_provider }}" \
+              --sku-name "${{ inputs.foundry_sku_name }}" \
+              --sku-capacity "${{ inputs.foundry_sku_capacity }}"
+          fi
+
+          ENDPOINT=$(az cognitiveservices account show \
+            --name "${{ inputs.foundry_resource_name }}" \
+            --resource-group "${{ inputs.resource_group }}" \
+            --query "properties.endpoints.\"Azure AI Model Inference API\"" \
+            --output tsv)
+          echo "Foundry endpoint: ${ENDPOINT}"
+
+      - name: Bootstrap Infrastructure (placeholder images)
+        run: |
+          PARAMS_FILE="${PARAMS_DIR}/${{ inputs.environment }}.parameters.json"
+          az deployment group create \
+            --resource-group "${{ inputs.resource_group }}" \
+            --template-file "${BICEP_FILE}" \
+            --parameters @"${PARAMS_FILE}" \
+            --parameters \
+              location="${{ inputs.azure_location }}" \
+              environmentName="${{ inputs.environment }}" \
+              namePrefix="${{ inputs.name_prefix }}" \
+              acrName="${{ inputs.acr_name }}" \
+              foundryProjectEndpoint="${{ inputs.foundry_project_endpoint }}" \
+              foundryModelDeployment="${{ inputs.foundry_model_deployment }}" \
+              foundryManagedIdentityClientId="${{ inputs.foundry_managed_identity_client_id }}" \
+            --name "bootstrap-${{ inputs.environment }}-${{ github.run_number }}"
+
+      - name: Build and Push Service Images
+        run: |
+          ACR_LOGIN_SERVER="${{ inputs.acr_name }}.azurecr.io"
+          az acr login --name "${{ inputs.acr_name }}"
+
+          docker build \
+            -f "${PROJECT_DIR}/src/SdlcAgent.Orchestrator.Api/Dockerfile" \
+            -t "${ACR_LOGIN_SERVER}/orchestrator-api:${IMAGE_TAG}" \
+            "${PROJECT_DIR}"
+          docker push "${ACR_LOGIN_SERVER}/orchestrator-api:${IMAGE_TAG}"
+
+          docker build \
+            -f "${PROJECT_DIR}/src/SdlcAgent.Architect.Api/Dockerfile" \
+            -t "${ACR_LOGIN_SERVER}/architect-api:${IMAGE_TAG}" \
+            "${PROJECT_DIR}"
+          docker push "${ACR_LOGIN_SERVER}/architect-api:${IMAGE_TAG}"
+
+          docker build \
+            -f "${PROJECT_DIR}/src/SdlcAgent.Developer.Api/Dockerfile" \
+            -t "${ACR_LOGIN_SERVER}/developer-api:${IMAGE_TAG}" \
+            "${PROJECT_DIR}"
+          docker push "${ACR_LOGIN_SERVER}/developer-api:${IMAGE_TAG}"
+
+          docker build \
+            -f "${PROJECT_DIR}/src/SdlcAgent.DevOps.Api/Dockerfile" \
+            -t "${ACR_LOGIN_SERVER}/devops-api:${IMAGE_TAG}" \
+            "${PROJECT_DIR}"
+          docker push "${ACR_LOGIN_SERVER}/devops-api:${IMAGE_TAG}"
+
+          docker build \
+            -f "${PROJECT_DIR}/src/SdlcAgent.Qa.Api/Dockerfile" \
+            -t "${ACR_LOGIN_SERVER}/qa-api:${IMAGE_TAG}" \
+            "${PROJECT_DIR}"
+          docker push "${ACR_LOGIN_SERVER}/qa-api:${IMAGE_TAG}"
+
+      - name: Deploy Workload Images
+        id: deploy
+        run: |
+          PARAMS_FILE="${PARAMS_DIR}/${{ inputs.environment }}.parameters.json"
+          ACR_LOGIN_SERVER="${{ inputs.acr_name }}.azurecr.io"
+
+          az deployment group create \
+            --resource-group "${{ inputs.resource_group }}" \
+            --template-file "${BICEP_FILE}" \
+            --parameters @"${PARAMS_FILE}" \
+            --parameters \
+              location="${{ inputs.azure_location }}" \
+              environmentName="${{ inputs.environment }}" \
+              namePrefix="${{ inputs.name_prefix }}" \
+              acrName="${{ inputs.acr_name }}" \
+              imageOrchestrator="${ACR_LOGIN_SERVER}/orchestrator-api:${IMAGE_TAG}" \
+              imageArchitect="${ACR_LOGIN_SERVER}/architect-api:${IMAGE_TAG}" \
+              imageDeveloper="${ACR_LOGIN_SERVER}/developer-api:${IMAGE_TAG}" \
+              imageDevOps="${ACR_LOGIN_SERVER}/devops-api:${IMAGE_TAG}" \
+              imageQa="${ACR_LOGIN_SERVER}/qa-api:${IMAGE_TAG}" \
+              foundryProjectEndpoint="${{ inputs.foundry_project_endpoint }}" \
+              foundryModelDeployment="${{ inputs.foundry_model_deployment }}" \
+              foundryManagedIdentityClientId="${{ inputs.foundry_managed_identity_client_id }}" \
+            --name "deploy-${{ inputs.environment }}-${{ github.run_number }}" \
+            --query "properties.outputs.orchestratorUrl.value" \
+            --output tsv > orchestrator-url.txt
+
+          ORCHESTRATOR_URL=$(cat orchestrator-url.txt)
+          echo "orchestrator_url=${ORCHESTRATOR_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Deployment Summary
+        run: |
+          echo "Deployment completed."
+          echo "Orchestrator URL: ${{ steps.deploy.outputs.orchestrator_url }}"

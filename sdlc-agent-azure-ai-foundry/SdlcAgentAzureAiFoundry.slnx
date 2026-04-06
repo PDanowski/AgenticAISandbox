@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SdlcAgent.Architect.Api/SdlcAgent.Architect.Api.csproj" />
+    <Project Path="src/SdlcAgent.Developer.Api/SdlcAgent.Developer.Api.csproj" />
+    <Project Path="src/SdlcAgent.DevOps.Api/SdlcAgent.DevOps.Api.csproj" />
+    <Project Path="src/SdlcAgent.Orchestrator.Api/SdlcAgent.Orchestrator.Api.csproj" />
+    <Project Path="src/SdlcAgent.Qa.Api/SdlcAgent.Qa.Api.csproj" />
+    <Project Path="src/SdlcAgent.Shared.Contracts/SdlcAgent.Shared.Contracts.csproj" />
+  </Folder>
+</Solution>

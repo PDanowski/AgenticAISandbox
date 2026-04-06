@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  orchestrator-api:
+    build:
+      context: .
+      dockerfile: src/SdlcAgent.Orchestrator.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - AgentServices__Architect=http://architect-api:8080
+      - AgentServices__Developer=http://developer-api:8080
+      - AgentServices__DevOps=http://devops-api:8080
+      - AgentServices__Qa=http://qa-api:8080
+    depends_on:
+      - architect-api
+      - developer-api
+      - devops-api
+      - qa-api
+
+  architect-api:
+    build:
+      context: .
+      dockerfile: src/SdlcAgent.Architect.Api/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+
+  developer-api:
+    build:
+      context: .
+      dockerfile: src/SdlcAgent.Developer.Api/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+
+  devops-api:
+    build:
+      context: .
+      dockerfile: src/SdlcAgent.DevOps.Api/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+
+  qa-api:
+    build:
+      context: .
+      dockerfile: src/SdlcAgent.Qa.Api/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://+:8080

@@ -6,6 +6,7 @@ Multi-agent SDLC starter kits for Architect, DevOps, Developer, and QA workflows
 
 - Azure-oriented pack: `Azure-and-dotnet-sdlc-agents/`
 - GitHub Actions/Codespaces-oriented pack: `GitHub-and-dotnet-sdlc-agents/`
+- Azure AI Foundry app pattern: `sdlc-agent-azure-ai-foundry/`
 
 Each pack includes:
 
@@ -48,6 +49,7 @@ Model selection:
 - `Azure-and-dotnet-sdlc-agents/automations/README.md`
 - `GitHub-and-dotnet-sdlc-agents/automations/README.md`
 - `sdlc-agent-app/README.md`
+- `sdlc-agent-azure-ai-foundry/README.md`
 
 ## Interactive app alternative
 

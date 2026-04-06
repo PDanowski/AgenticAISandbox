@@ -1,10 +1,9 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+WORKDIR /workspace
 
-COPY . /app
+COPY . /workspace
 
 ENV PYTHONUNBUFFERED=1
 
 ENTRYPOINT ["python", "sdlc-agent-app/app.py"]
-

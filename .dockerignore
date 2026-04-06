@@ -1,0 +1,12 @@
+.git
+.gitignore
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+**/bin/
+**/obj/
+**/.idea/
+**/.vscode/
+**/.DS_Store
+

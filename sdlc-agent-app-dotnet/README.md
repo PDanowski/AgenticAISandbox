@@ -48,10 +48,15 @@ Run with GitHub token:
 docker run -it --rm -e GITHUB_TOKEN=%GITHUB_TOKEN% sdlc-agent-app-dotnet
 ```
 
+Optional (recommended) host bind mount to persist outputs directly in your local repo:
+
+```powershell
+docker run -it --rm -v "${PWD}:/workspace" -e OPENAI_API_KEY=%OPENAI_API_KEY% sdlc-agent-app-dotnet
+```
+
 ## Output
 
 Outputs are written under selected pack outbox:
 
 - `GitHub-and-dotnet-sdlc-agents/automations/<profile>/outbox/`
 - `Azure-and-dotnet-sdlc-agents/automations/<profile>/outbox/`
-

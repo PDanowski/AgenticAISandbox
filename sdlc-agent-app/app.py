@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import os
+import sys
+
+from config import MODEL_PRESETS, PACKS, ROOT
+from prompts import build_prompts
+from providers import GitHubModelsClient, OpenAiClient
+from ui import ask_choice, ask_multiline
+from workflow import WorkflowRunner
+
+
+def main() -> int:
+    print("\nSDLC Agent App (interactive)\n")
+    pack_key = ask_choice("Pack", ("github", "azure"), "github")
+    profile = ask_choice("Profile", ("codex", "copilot"), "codex")
+    provider = ask_choice("Provider", ("openai", "github-models"), "openai")
+    preset = ask_choice("Model preset", ("quality", "balanced", "fast"), "balanced")
+
+    custom_model = input("Explicit model (optional, press Enter to use preset): ").strip()
+    model = custom_model if custom_model else MODEL_PRESETS[provider][preset]
+
+    pack_root = PACKS[pack_key]
+    out_dir = pack_root / "automations" / profile / "outbox"
+
+    if provider == "openai":
+        token = (os.environ.get("OPENAI_API_KEY") or "").strip()
+        if not token:
+            print("ERROR: OPENAI_API_KEY is not set.")
+            return 2
+        base_url = input("OpenAI base URL (optional): ").strip() or "https://api.openai.com/v1"
+        client = OpenAiClient(api_key=token, base_url=base_url)
+    else:
+        token = (os.environ.get("GITHUB_TOKEN") or "").strip()
+        if not token:
+            print("ERROR: GITHUB_TOKEN is not set.")
+            return 2
+        base_url = input("GitHub Models base URL (optional): ").strip() or "https://models.github.ai"
+        github_org = input("GitHub org (optional, for org-scoped endpoint): ").strip()
+        client = GitHubModelsClient(token=token, base_url=base_url, github_org=github_org)
+
+    prompts = build_prompts(ROOT, pack_root, profile)
+    feature = ask_multiline("Feature request")
+
+    runner = WorkflowRunner(
+        model_client=client,
+        model_name=model,
+        prompts=prompts,
+        out_dir=out_dir,
+        profile=profile,
+        feature=feature,
+    )
+    files = runner.run(pack_key=pack_key, provider=provider)
+
+    print("\nDone. Generated output paths:")
+    for f in files:
+        print(f"- {f}")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print("\nInterrupted.")
+        raise SystemExit(130)
+    except Exception as exc:
+        print(f"\nERROR: {exc}", file=sys.stderr)
+        raise SystemExit(1)

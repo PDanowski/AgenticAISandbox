@@ -47,3 +47,13 @@ Model selection:
 - `GitHub-and-dotnet-sdlc-agents/runner/README.md`
 - `Azure-and-dotnet-sdlc-agents/automations/README.md`
 - `GitHub-and-dotnet-sdlc-agents/automations/README.md`
+- `sdlc-agent-app/README.md`
+
+## Interactive app alternative
+
+If you prefer guided interaction with explicit approval gates, use:
+
+- `sdlc-agent-app/app.py`
+- `sdlc-agent-app-dotnet/Program.cs`
+
+It runs locally or in Docker, asks for missing input/approvals, and prints generated output paths.

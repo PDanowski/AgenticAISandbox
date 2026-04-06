@@ -4,15 +4,20 @@ For each new request file:
 
 1. Architect phase
 - Use `GitHub-and-dotnet-sdlc-agents/agents/codex/architect-system-prompt.md` and `GitHub-and-dotnet-sdlc-agents/agents/workflow.md`.
+- Create clarification questions and assumptions log first.
 - Produce architecture overview and Mermaid diagrams (component, sequence, flow).
 - Produce work items using `GitHub-and-dotnet-sdlc-agents/agents/templates/work-item-template.md`.
+- Produce Gate A approval packet using `GitHub-and-dotnet-sdlc-agents/agents/templates/approval-gate-template.md`.
 
 2. Implementation planning phase
+- Run only after Gate A is approved.
 - Split work into DevOps and Developer streams.
 - Identify dependencies and required collaboration points.
 - Capture expected infrastructure, code, and test deliverables.
+- Produce Gate B and Gate C approval packets.
 
 3. QA phase
+- Run only after implementation review/merge approval (Gate D).
 - Build test plan with smoke, API, regression, and e2e coverage where feasible.
 
 4. PR readiness phase

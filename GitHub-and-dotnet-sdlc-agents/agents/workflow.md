@@ -18,13 +18,30 @@ Each environment must be separately configured.
 ## Work item lifecycle
 
 1. Requirement intake
-2. Architect analysis + clarifications
+2. Architect clarification loop (questions + assumptions)
 3. Architecture package created (diagrams + work items)
-4. DevOps/Developer implementation in parallel
-5. QA test design + automation + execution
-6. PR raised with evidence
-7. Architect + User manual review
-8. Merge and release through pipelines
+4. Architecture approval gate (User approval required)
+5. DevOps and Developer rework/refine implementation plans based on approved architecture
+6. Plan approval gate (User approval required for DevOps plan and Developer plan)
+7. DevOps and Developer implementation
+8. Code/repository/workflow review and merge/deploy readiness
+9. QA reworks test plan for actual implementation and executes tests
+10. Final release recommendation and go-live decision
+
+## Approval gates (mandatory)
+
+- Gate A: Architecture approval
+  - Input: Architect clarifications, architecture design, diagrams, risks.
+  - Output: explicit approval/reject decision by User.
+- Gate B: DevOps plan approval
+  - Input: updated DevOps plan aligned to approved architecture.
+  - Output: explicit approval/reject decision by User.
+- Gate C: Developer plan approval
+  - Input: updated Developer plan aligned to approved architecture.
+  - Output: explicit approval/reject decision by User.
+- Gate D: Implementation review
+  - Input: PR(s), evidence, tests.
+  - Output: merge/use decision and handoff to QA.
 
 ## Mandatory artifacts
 
@@ -33,6 +50,7 @@ Each environment must be separately configured.
 - Developer code + unit/integration tests
 - QA test assets + execution report
 - PR notes with assumptions, risks, and evidence
+- Approval records for gates A/B/C/D
 
 ## Definition of Done
 
@@ -43,3 +61,4 @@ Each environment must be separately configured.
 - QA coverage completed for applicable scope.
 - Monitoring and alerting prepared.
 - PR reviewed manually by User and Architect Agent.
+- All mandatory approval gates passed and recorded.

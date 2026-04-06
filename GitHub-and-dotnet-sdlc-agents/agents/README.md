@@ -36,3 +36,12 @@ Use each file as a system prompt (or role definition) in your agent platform.
 4. QA validates implemented scope.
 5. PR is raised and reviewed by Architect + User.
 6. Merge after all quality gates pass.
+
+## Gated delivery model
+
+Use mandatory approvals:
+
+- Gate A: Architecture approval (after clarifications and design)
+- Gate B: DevOps plan approval (after plan rework)
+- Gate C: Developer plan approval (after plan rework)
+- Gate D: Implementation review/merge approval (before QA rework execution)

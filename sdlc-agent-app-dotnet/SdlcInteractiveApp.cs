@@ -79,8 +79,7 @@ public static class SdlcInteractiveApp
             {
                 baseUrl = providerCfg.BaseUrl;
             }
-            var client = new HttpClient { Timeout = TimeSpan.FromSeconds(providerCfg.TimeoutSec) };
-            return new OpenAiClient(client, token, baseUrl);
+            return new OpenAiClient(token, baseUrl);
         }
 
         var githubToken = Environment.GetEnvironmentVariable(providerCfg.TokenEnv) ?? string.Empty;

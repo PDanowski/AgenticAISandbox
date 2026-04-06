@@ -1,3 +1,6 @@
+using Microsoft.Extensions.AI;
+using OpenAI;
+using System.ClientModel;
 using System.Text;
 using System.Text.Json;
 
@@ -8,71 +11,35 @@ public interface IModelClient
     Task<string> CallAsync(string model, string systemPrompt, string userPrompt);
 }
 
-public sealed class OpenAiClient(HttpClient http, string apiKey, string baseUrl) : IModelClient
+public sealed class OpenAiClient(string apiKey, string baseUrl) : IModelClient
 {
+    private readonly string _apiKey = apiKey;
+    private readonly string _baseUrl = baseUrl;
+
     public async Task<string> CallAsync(string model, string systemPrompt, string userPrompt)
     {
-        var url = $"{baseUrl.TrimEnd('/')}/responses";
-        var body = new
+        var options = new OpenAIClientOptions();
+        if (!string.IsNullOrWhiteSpace(_baseUrl))
         {
-            model,
-            input = new object[]
-            {
-                new
-                {
-                    role = "system",
-                    content = new object[] { new { type = "input_text", text = systemPrompt } }
-                },
-                new
-                {
-                    role = "user",
-                    content = new object[] { new { type = "input_text", text = userPrompt } }
-                }
-            }
-        };
-
-        using var req = new HttpRequestMessage(HttpMethod.Post, url);
-        req.Headers.Add("Authorization", $"Bearer {apiKey}");
-        req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-
-        using var resp = await http.SendAsync(req);
-        var txt = await resp.Content.ReadAsStringAsync();
-        if (!resp.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"API HTTP {(int)resp.StatusCode}: {txt}");
+            options.Endpoint = new Uri(_baseUrl);
         }
 
-        using var doc = JsonDocument.Parse(txt);
-        var output = doc.RootElement.GetProperty("output");
-        var sb = new StringBuilder();
-        foreach (var item in output.EnumerateArray())
+        var openAiClient = new OpenAIClient(new ApiKeyCredential(_apiKey), options);
+        IChatClient chatClient = openAiClient.GetChatClient(model).AsIChatClient();
+
+        var response = await chatClient.GetResponseAsync(
+            [
+                new ChatMessage(ChatRole.System, systemPrompt),
+                new ChatMessage(ChatRole.User, userPrompt),
+            ]);
+
+        var text = response.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(text))
         {
-            if (!item.TryGetProperty("type", out var type) || type.GetString() != "message")
-            {
-                continue;
-            }
-            if (!item.TryGetProperty("content", out var content))
-            {
-                continue;
-            }
-            foreach (var c in content.EnumerateArray())
-            {
-                if (c.TryGetProperty("type", out var ct) && ct.GetString() == "output_text")
-                {
-                    if (c.TryGetProperty("text", out var t) && !string.IsNullOrWhiteSpace(t.GetString()))
-                    {
-                        sb.AppendLine(t.GetString());
-                    }
-                }
-            }
+            throw new InvalidOperationException("No text output found in OpenAI chat response.");
         }
 
-        var result = sb.ToString().Trim();
-        if (string.IsNullOrWhiteSpace(result))
-        {
-            throw new InvalidOperationException($"No text output found in API response: {txt}");
-        }
-        return result;
+        return text;
     }
 }
 

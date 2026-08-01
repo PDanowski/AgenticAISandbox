@@ -1,6 +1,6 @@
 # SDLC Agent App (.NET)
 
-Interactive `.NET 10` alternative to the Python app.
+Interactive `.NET 10` SDLC app that runs the Architect, DevOps, Developer, and QA workflow with approval gates.
 
 Flow:
 
@@ -8,27 +8,26 @@ Flow:
 2. Gate A: architecture approval
 3. DevOps + Developer plan generation/rework
 4. Gate B + Gate C: plan approvals
-5. Gate D: implementation review/merge confirmation
-6. QA rework + test planning
+5. Gate D: implementation review confirmation
+6. QA rework and test planning
 
-The app asks for required inputs and approvals and prints generated output paths.
+The app prompts for required inputs and approvals, uses a role-agent execution model, and writes generated outputs.
 
 ## Configuration
 
-All runtime configuration (packs, provider URLs, token env names, model presets) is in:
+Runtime configuration lives in:
 
 - `sdlc-agent-app-dotnet/appsettings.json`
 
-## Run locally
+This includes pack paths, provider URLs, token environment variables, and model presets.
 
-Prerequisites:
+## Requirements
 
 - .NET 10 SDK
-- Token:
-  - `OPENAI_API_KEY` for provider `openai`
-  - `GITHUB_TOKEN` for provider `github-models`
+- `OPENAI_API_KEY` for `openai` provider
+- `GITHUB_TOKEN` for `github-models` provider
 
-Run:
+## Run locally
 
 ```powershell
 dotnet run --project .\sdlc-agent-app-dotnet\SdlcAgentApp.csproj
@@ -54,7 +53,7 @@ Run with GitHub token:
 docker run -it --rm -e GITHUB_TOKEN=%GITHUB_TOKEN% sdlc-agent-app-dotnet
 ```
 
-Optional (recommended) host bind mount to persist outputs directly in your local repo:
+Optional mount for output persistence:
 
 ```powershell
 docker run -it --rm -v "${PWD}:/workspace" -e OPENAI_API_KEY=%OPENAI_API_KEY% sdlc-agent-app-dotnet
@@ -62,7 +61,12 @@ docker run -it --rm -v "${PWD}:/workspace" -e OPENAI_API_KEY=%OPENAI_API_KEY% sd
 
 ## Output
 
-Outputs are written under selected pack outbox:
+Outputs are written to the selected pack outbox:
 
 - `GitHub-and-dotnet-sdlc-agents/automations/<profile>/outbox/`
 - `Azure-and-dotnet-sdlc-agents/automations/<profile>/outbox/`
+
+## Notes
+
+- The app uses role agents to separate behavior across SDLC phases.
+- Generated content should be reviewed before being applied in production.

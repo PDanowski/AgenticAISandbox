@@ -1,13 +1,13 @@
 # SDLC Multi-Agent Pack (Azure + .NET)
 
-This folder defines 4 collaborating agents for your SDLC process:
+This folder defines four collaborating SDLC agents:
 
 1. Architect Agent
 2. DevOps Agent
 3. Developer Agent
 4. QA Agent
 
-Use each file as a system prompt (or role definition) in your agent platform.
+Use each file as a system prompt or role definition in your agent platform.
 
 ## Files
 
@@ -16,7 +16,7 @@ Use each file as a system prompt (or role definition) in your agent platform.
 - `developer-agent.md`: .NET 10 service implementation with unit/integration tests
 - `qa-agent.md`: smoke/API/regression/e2e quality coverage
 - `core/`: optional core prompt files for each role
-- `skills/`: optional shared skills docs for agent behavior
+- `skills/`: optional shared skill docs for agent behavior
 - `workflow.md`: handoffs, work item lifecycle, and Definition of Done
 - `codex/`: Codex-specific configuration pack
 - `templates/`: reusable work item and PR templates
@@ -25,10 +25,10 @@ Use each file as a system prompt (or role definition) in your agent platform.
 
 ## Operating model
 
-- Architect defines architecture and constraints.
-- DevOps and Developer implement in parallel with tight collaboration.
-- QA validates every work item where applicable.
-- Architect and User perform manual final review on pull requests.
+- Architect defines architecture, constraints, and approval gates.
+- DevOps and Developer execute implementation plans in parallel.
+- QA validates scope, test strategy, and release readiness.
+- Architect and user-reviewers perform final PR signoff.
 
 ## Standard work item flow
 

@@ -1,11 +1,12 @@
 # Shared Agent Core
 
-This folder contains repository-level core prompt definitions for standard SDLC agent roles.
+This folder contains repository-level core prompt definitions for standard SDLC roles.
 
-Files:
+These core prompts are intended to provide shared defaults for:
+
 - `architect-core.md`
 - `devops-core.md`
 - `developer-core.md`
 - `qa-core.md`
 
-These prompts are used as shared defaults when a pack does not provide a stronger pack-specific core prompt in `agents/core/`.
+Use these files as base role definitions when a pack does not override them with stronger prompts in `agents/core/`.

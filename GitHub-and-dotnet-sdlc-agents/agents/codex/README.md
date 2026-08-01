@@ -1,6 +1,6 @@
 # Codex Config Pack
 
-This folder contains Codex-oriented configuration files for your SDLC multi-agent model.
+This folder contains Codex-oriented configuration files for the SDLC multi-agent model.
 
 ## Files
 
@@ -12,8 +12,8 @@ This folder contains Codex-oriented configuration files for your SDLC multi-agen
 
 ## Usage
 
-1. Create 5 agents in Codex (orchestrator + 4 specialists).
+1. Create 5 agents in Codex (orchestrator + 4 specialist roles).
 2. Use each file as the corresponding system prompt.
-3. Keep `workflow.md` and templates attached as shared context.
+3. Provide `workflow.md` and templates as shared context.
 4. Require PR review by Architect + User before merge.
 

@@ -2,9 +2,9 @@
 
 This folder contains reusable skills for multi-agent SDLC workflows.
 
-Each `*.md` file describes a behavior or capability that agents can reference when formulating responses.
+Each `*.md` file describes a behavior or capability that agents can reference as shared prompt context.
 
-Use cases:
+Common skill topics:
 - `.github/skills/requirements-clarification.md`
 - `.github/skills/architecture-decision-records.md`
 - `.github/skills/architecture-diagrams.md`
@@ -17,4 +17,4 @@ Use cases:
 - `.github/skills/release-readiness.md`
 - `.github/skills/agent-evaluation.md`
 
-The prompt loader includes these files as shared context when present.
+These documents are loaded as shared prompt context when present, enabling more consistent agent behavior.

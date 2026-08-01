@@ -6,27 +6,27 @@ import textwrap
 from pathlib import Path
 
 from prompts import RolePrompt
-from providers import ModelClient
+from providers import RoleAgentFactory
 from ui import ask_required, ask_yes_no
 
 
 class WorkflowRunner:
     def __init__(
         self,
-        model_client: ModelClient,
-        model_name: str,
+        agent_factory: RoleAgentFactory,
         prompts: dict[str, RolePrompt],
         out_dir: Path,
         profile: str,
         feature: str,
+        model_name: str,
         run_stamp: str | None = None,
     ) -> None:
-        self.model_client = model_client
-        self.model_name = model_name
+        self.agent_factory = agent_factory
         self.prompts = prompts
         self.out_dir = out_dir
         self.profile = profile
         self.feature = feature
+        self.model_name = model_name
         self.ts = run_stamp or dt.datetime.now().strftime("%Y%m%d-%H%M%S")
         self.out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -65,11 +65,8 @@ class WorkflowRunner:
         return files
 
     def _call(self, role: str, user_prompt: str) -> str:
-        return self.model_client.call(
-            self.model_name,
-            self.prompts[role].compose_system(),
-            user_prompt,
-        )
+        agent = self.agent_factory.create(role, self.prompts[role].compose_system())
+        return agent.run(user_prompt)
 
     def _run_architect_phase(self) -> tuple[str, Path]:
         print("\nPhase 1: Architect")

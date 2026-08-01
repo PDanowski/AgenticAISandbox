@@ -12,6 +12,41 @@ class ModelClient(ABC):
         raise NotImplementedError
 
 
+class RoleAgent(ABC):
+    @abstractmethod
+    def run(self, user_prompt: str) -> str:
+        raise NotImplementedError
+
+
+class RoleAgentFactory(ABC):
+    @abstractmethod
+    def create(self, role: str, system_prompt: str) -> RoleAgent:
+        raise NotImplementedError
+
+
+class ModelClientRoleAgent(RoleAgent):
+    def __init__(self, model_client: ModelClient, model_name: str, system_prompt: str) -> None:
+        self.model_client = model_client
+        self.model_name = model_name
+        self.system_prompt = system_prompt
+
+    def run(self, user_prompt: str) -> str:
+        return self.model_client.call(self.model_name, self.system_prompt, user_prompt)
+
+
+class ModelClientRoleAgentFactory(RoleAgentFactory):
+    def __init__(self, model_client: ModelClient, model_name: str) -> None:
+        self.model_client = model_client
+        self.model_name = model_name
+
+    def create(self, role: str, system_prompt: str) -> RoleAgent:
+        return ModelClientRoleAgent(
+            model_client=self.model_client,
+            model_name=self.model_name,
+            system_prompt=system_prompt,
+        )
+
+
 class OpenAiClient(ModelClient):
     def __init__(self, api_key: str, base_url: str, timeout_sec: int) -> None:
         self.api_key = api_key

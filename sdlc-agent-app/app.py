@@ -6,7 +6,7 @@ import sys
 
 from config import ROOT, load_app_config
 from prompts import build_prompts
-from providers import GitHubModelsClient, OpenAiClient
+from providers import GitHubModelsClient, ModelClientRoleAgentFactory, OpenAiClient
 from ui import ask_choice, ask_multiline
 from workflow import WorkflowRunner
 
@@ -48,16 +48,17 @@ def main() -> int:
             timeout_sec=provider_cfg.timeout_sec,
         )
 
+    agent_factory = ModelClientRoleAgentFactory(model_client=client, model_name=model)
     prompts = build_prompts(ROOT, pack_root, profile)
     feature = ask_multiline("Feature request")
 
     runner = WorkflowRunner(
-        model_client=client,
-        model_name=model,
+        agent_factory=agent_factory,
         prompts=prompts,
         out_dir=out_dir,
         profile=profile,
         feature=feature,
+        model_name=model,
     )
     files = runner.run(pack_key=pack_key, provider=provider)
 

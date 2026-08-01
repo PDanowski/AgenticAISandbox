@@ -1,70 +1,63 @@
 ﻿# AgenticAISandbox
 
-Multi-agent SDLC starter kits for Architect, DevOps, Developer, and QA workflows with .NET.
+AgenticAISandbox is a multi-agent SDLC starter repository for building and running Architect, DevOps, Developer, and QA workflows.
 
-## Packs
+## What is included
 
-- Azure-oriented pack: `Azure-and-dotnet-sdlc-agents/`
-- GitHub Actions/Codespaces-oriented pack: `GitHub-and-dotnet-sdlc-agents/`
-- Azure AI Foundry app pattern: `sdlc-agent-azure-ai-foundry/`
+- `Azure-and-dotnet-sdlc-agents/`: Azure-focused SDLC pack with .NET agent prompts, workflows, and runner scripts.
+- `GitHub-and-dotnet-sdlc-agents/`: GitHub Actions/Codespaces-focused SDLC pack with .NET agent prompts, workflows, and runner scripts.
+- `sdlc-agent-app/`: Python interactive SDLC app with approval gates and role-agent workflow.
+- `sdlc-agent-app-dotnet/`: .NET interactive SDLC app with approval gates and role-agent workflow.
+- `sdlc-agent-azure-ai-foundry/`: Azure AI Foundry deployment pattern with orchestrator and service-based agent APIs.
+- `agent-core/`: shared repo-level core prompt definitions for standard SDLC roles.
+- `.github/skills/`: reusable skill docs for agent behavior and orchestration.
 
-Each pack includes:
+## Key concepts
 
-- `agents/` role prompts and workflow
-- `agent-core/` shared repo-level agent role definitions for Architect, DevOps, Developer, and QA
-- `agents/core/` optional pack-level core prompts for each agent role
-- `agents/skills/` optional pack-level shared skills documentation for agent behavior
-- `.github/skills/` reusable repository-level skills for agent orchestration
-- `agents/codex/` Codex-ready system prompts
-- `agents/templates/` work item + PR templates
-- `automations/` recurring automation assets
-- `runner/` standalone script to run Architect -> (DevOps + Developer) -> QA
-
-## Copilot integration (repo-wide)
-
-- Global instructions: `.github/copilot-instructions.md`
-- Role prompts: `.github/prompts/`
-- PR template: `.github/pull_request_template.md`
-- SDLC issue automation: `.github/workflows/copilot-sdlc-orchestrator.yml`
+- Role agents: Architect, DevOps, Developer, and QA each get a dedicated system prompt and execution model.
+- Packed workflows: `agents/workflow.md` and profiles define handoffs, approvals, and work item lifecycles.
+- Approval gates: architecture approval, plan approval, implementation review, and QA validation.
+- Provider support: OpenAI / GitHub Models with configurable model presets and endpoints.
 
 ## Quick start
 
-1. Choose a pack (`Azure-and-dotnet-sdlc-agents` or `GitHub-and-dotnet-sdlc-agents`).
-2. Open `<pack>/agents/codex/README.md` and create 5 agents (Orchestrator + Architect + DevOps + Developer + QA).
-3. Use `<pack>/agents/workflow.md` and templates as shared context.
-4. Run the standalone runner from `<pack>/runner/`.
+1. Choose a pack:
+   - `Azure-and-dotnet-sdlc-agents`
+   - `GitHub-and-dotnet-sdlc-agents`
+2. Review the role prompts and workflow in the pack's `agents/` folder.
+3. Use `agents/codex/README.md` to wire up Codex prompts or `.github/` files for Copilot-style prompts.
+4. Run the standalone runner from the pack's `runner/` folder, or use the interactive Python/.NET apps.
 
-## Runner provider/model options
+## Running the interactive apps
 
-Runners support:
+- Python app: `sdlc-agent-app/app.py`
+- .NET app: `sdlc-agent-app-dotnet/SdlcAgentApp.csproj`
 
-- `openai` provider (requires `OPENAI_API_KEY`)
-- `github-models` provider (requires `GITHUB_TOKEN`)
+Both apps support OpenAI and GitHub Models providers, ask for feature requests and approvals, and write outputs to the selected pack outbox.
 
-Model selection:
+## Provider and model options
 
-- Preset: `quality`, `balanced`, `fast`
-- Or explicit model name via `-Model` / `--model`
+- OpenAI provider: requires `OPENAI_API_KEY`
+- GitHub Models provider: requires `GITHUB_TOKEN`
+- Model presets: `quality`, `balanced`, `fast`
+- Or pass an explicit model name via app prompts or CLI arguments.
 
-## Useful docs
+## Useful documentation
 
 - `Azure-and-dotnet-sdlc-agents/runner/README.md`
 - `GitHub-and-dotnet-sdlc-agents/runner/README.md`
 - `Azure-and-dotnet-sdlc-agents/automations/README.md`
 - `GitHub-and-dotnet-sdlc-agents/automations/README.md`
 - `sdlc-agent-app/README.md`
+- `sdlc-agent-app-dotnet/README.md`
 - `sdlc-agent-azure-ai-foundry/README.md`
 
 ## Azure deployment option
 
-- GitHub Actions + Bicep workflow: `.github/workflows/sdlc-agent-azure-foundry-deploy.yml`
+- GitHub Actions + Bicep: `.github/workflows/sdlc-agent-azure-foundry-deploy.yml`
 - Bicep source: `sdlc-agent-azure-ai-foundry/infra/bicep/main.bicep`
 
-## Interactive app alternative
+## Notes
 
-If you prefer guided interaction with explicit approval gates, use:
-
-- `sdlc-agent-app/app.py`
-- `sdlc-agent-app-dotnet/Program.cs`
-
-It runs locally or in Docker, asks for missing input/approvals, and prints generated output paths.
+- This repository is a starter kit for SDLC workflows, not a finished production system.
+- Generated outputs and agent plans should always be reviewed manually.

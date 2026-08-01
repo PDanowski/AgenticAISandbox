@@ -1,14 +1,104 @@
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OpenAI;
+using SdlcAgentApp.Core;
 using System.ClientModel;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 
 namespace SdlcAgentApp.Services;
 
 public interface IModelClient
 {
     Task<string> CallAsync(string model, string systemPrompt, string userPrompt);
+}
+
+public interface IRoleAgent
+{
+    string RoleName { get; }
+    Task<string> RunAsync(string userPrompt);
+}
+
+public interface IRoleAgentFactory
+{
+    IRoleAgent Create(string role, string systemPrompt);
+}
+
+public sealed class OpenAiRoleAgentFactory(string apiKey, string baseUrl, string model) : IRoleAgentFactory
+{
+    private readonly string _apiKey = apiKey;
+    private readonly string _baseUrl = baseUrl;
+    private readonly string _model = model;
+
+    public IRoleAgent Create(string role, string systemPrompt)
+    {
+        var options = new OpenAIClientOptions();
+        if (!string.IsNullOrWhiteSpace(_baseUrl))
+        {
+            options.Endpoint = new Uri(_baseUrl);
+        }
+
+        var openAiClient = new OpenAIClient(new ApiKeyCredential(_apiKey), options);
+        var chatClient = openAiClient.GetChatClient(_model).AsIChatClient();
+        return new OpenAiRoleAgent(role, chatClient, systemPrompt);
+    }
+}
+
+public sealed class OpenAiRoleAgent(string role, IChatClient chatClient, string systemPrompt) : IRoleAgent
+{
+    public string RoleName { get; } = role;
+    private readonly ChatClientAgent _agent = new(chatClient, instructions: systemPrompt, name: role, description: "SDLC role agent");
+
+    public async Task<string> RunAsync(string userPrompt)
+    {
+        var runResponse = await _agent.RunAsync(
+            [new ChatMessage(ChatRole.User, userPrompt)],
+            _agent.GetNewThread(),
+            options: null,
+            cancellationToken: CancellationToken.None);
+
+        var text = runResponse.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new InvalidOperationException($"No text output found from {RoleName} agent.");
+        }
+
+        return text;
+    }
+}
+
+public sealed class GitHubRoleAgentFactory(
+    HttpClient http,
+    string token,
+    string baseUrl,
+    string githubOrg,
+    string githubApiVersion,
+    string model) : IRoleAgentFactory
+{
+    private readonly HttpClient _http = http;
+    private readonly string _token = token;
+    private readonly string _baseUrl = baseUrl;
+    private readonly string _githubOrg = githubOrg;
+    private readonly string _githubApiVersion = githubApiVersion;
+    private readonly string _model = model;
+
+    public IRoleAgent Create(string role, string systemPrompt)
+    {
+        var client = new GitHubModelsClient(_http, _token, _baseUrl, _githubOrg, _githubApiVersion);
+        return new ModelClientRoleAgent(role, client, _model, systemPrompt);
+    }
+}
+
+public sealed class ModelClientRoleAgent(string role, IModelClient modelClient, string model, string systemPrompt) : IRoleAgent
+{
+    public string RoleName { get; } = role;
+    private readonly IModelClient _modelClient = modelClient;
+    private readonly string _model = model;
+    private readonly string _systemPrompt = systemPrompt;
+
+    public Task<string> RunAsync(string userPrompt)
+        => _modelClient.CallAsync(_model, _systemPrompt, userPrompt);
 }
 
 public sealed class OpenAiClient(string apiKey, string baseUrl) : IModelClient

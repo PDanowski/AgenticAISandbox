@@ -4,10 +4,9 @@ namespace SdlcAgentApp.Services;
 
 public sealed class WorkflowRunner(
     ConsoleUi ui,
-    IModelClient modelClient,
+    IRoleAgentFactory agentFactory,
     Dictionary<string, RolePrompt> prompts,
     OutputWriter outputWriter,
-    string model,
     string feature,
     string profile,
     string timestamp)
@@ -35,7 +34,6 @@ public sealed class WorkflowRunner(
         - Pack: {packKey}
         - Profile: {profile}
         - Provider: {provider}
-        - Model: {model}
 
         ## Output Files
         - Architect: {archPath}
@@ -210,7 +208,8 @@ public sealed class WorkflowRunner(
     private Task<string> CallRoleAsync(string role, string userPrompt)
     {
         var rp = prompts[role];
-        return modelClient.CallAsync(model, rp.ComposeSystemPrompt(), userPrompt);
+        var agent = agentFactory.Create(role, rp.ComposeSystemPrompt());
+        return agent.RunAsync(userPrompt);
     }
 }
 

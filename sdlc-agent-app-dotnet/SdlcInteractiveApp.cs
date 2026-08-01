@@ -33,13 +33,13 @@ public static class SdlcInteractiveApp
             var outDir = Path.Combine(packRoot, "automations", profile, "outbox");
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
 
-            var modelClient = BuildClient(ui, provider, appConfig);
+            var agentFactory = BuildAgentFactory(ui, provider, appConfig, model);
             var promptLoader = new PromptLoader();
             var prompts = promptLoader.BuildPrompts(repoRoot, packRoot, profile);
             var feature = ui.AskMultiLine("Feature request");
 
             var writer = new OutputWriter(outDir);
-            var workflow = new WorkflowRunner(ui, modelClient, prompts, writer, model, feature, profile, timestamp);
+            var workflow = new WorkflowRunner(ui, agentFactory, prompts, writer, feature, profile, timestamp);
             var files = await workflow.RunAsync(packKey, provider);
 
             Console.WriteLine();
@@ -63,7 +63,7 @@ public static class SdlcInteractiveApp
         }
     }
 
-    private static IModelClient BuildClient(ConsoleUi ui, string provider, AppConfig appConfig)
+    private static IRoleAgentFactory BuildAgentFactory(ConsoleUi ui, string provider, AppConfig appConfig, string model)
     {
         var providerCfg = appConfig.Providers[provider];
         if (provider == "openai")
@@ -79,7 +79,7 @@ public static class SdlcInteractiveApp
             {
                 baseUrl = providerCfg.BaseUrl;
             }
-            return new OpenAiClient(token, baseUrl);
+            return new OpenAiRoleAgentFactory(token, baseUrl, model);
         }
 
         var githubToken = Environment.GetEnvironmentVariable(providerCfg.TokenEnv) ?? string.Empty;
@@ -96,6 +96,6 @@ public static class SdlcInteractiveApp
         Console.Write("GitHub org (optional): ");
         var githubOrg = (Console.ReadLine() ?? string.Empty).Trim();
         var ghClient = new HttpClient { Timeout = TimeSpan.FromSeconds(providerCfg.TimeoutSec) };
-        return new GitHubModelsClient(ghClient, githubToken, ghBaseUrl, githubOrg, providerCfg.GitHubApiVersion);
+        return new GitHubRoleAgentFactory(ghClient, githubToken, ghBaseUrl, githubOrg, providerCfg.GitHubApiVersion, model);
     }
 }

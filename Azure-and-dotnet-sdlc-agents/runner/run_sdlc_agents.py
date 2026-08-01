@@ -154,28 +154,55 @@ def call_github_models_api(
     raise RuntimeError(f"No text output found in GitHub Models response: {parsed}")
 
 
+def _read_optional(path: Path) -> str | None:
+    return path.read_text(encoding="utf-8") if path.exists() else None
+
+
+def _read_role_prompt(role: str) -> str:
+    core_path = PACK_ROOT / "agents" / "core" / f"{role}-core.md"
+    agent_path = PACK_ROOT / "agents" / f"{role}-agent.md"
+    return _read_optional(core_path) or read_text(agent_path)
+
+
+def _load_skill_docs() -> str:
+    skills_dir = PACK_ROOT / "agents" / "skills"
+    if not skills_dir.exists():
+        return ""
+
+    files = sorted(skills_dir.glob("*.md"))
+    if not files:
+        return ""
+
+    parts = ["Skills:"]
+    for path in files:
+        parts.append(f"### {path.name}\n{read_text(path)}")
+    return "\n\n".join(parts)
+
+
 def build_prompts(profile: str) -> Dict[str, Tuple[str, str]]:
     workflow = read_text(PACK_ROOT / "agents" / "workflow.md")
     wi_template = read_text(PACK_ROOT / "agents" / "templates" / "work-item-template.md")
     pr_template = read_text(PACK_ROOT / "agents" / "templates" / "pull-request-template.md")
+    skills = _load_skill_docs()
 
     if profile == "codex":
         roles = {
-            "architect": read_text(PACK_ROOT / "agents" / "architect-agent.md"),
-            "devops": read_text(PACK_ROOT / "agents" / "devops-agent.md"),
-            "developer": read_text(PACK_ROOT / "agents" / "developer-agent.md"),
-            "qa": read_text(PACK_ROOT / "agents" / "qa-agent.md"),
+            "architect": _read_role_prompt("architect"),
+            "devops": _read_role_prompt("devops"),
+            "developer": _read_role_prompt("developer"),
+            "qa": _read_role_prompt("qa"),
         }
-        shared = "\n\n".join(
-            [
-                "Shared Context:",
-                workflow,
-                "Work Item Template:",
-                wi_template,
-                "PR Template:",
-                pr_template,
-            ]
-        )
+        shared_parts = [
+            "Shared Context:",
+            workflow,
+            "Work Item Template:",
+            wi_template,
+            "PR Template:",
+            pr_template,
+        ]
+        if skills:
+            shared_parts.append(skills)
+        shared = "\n\n".join(shared_parts)
         return {k: (v, shared) for k, v in roles.items()}
 
     if profile == "copilot":
@@ -186,18 +213,19 @@ def build_prompts(profile: str) -> Dict[str, Tuple[str, str]]:
             "developer": read_text(ROOT / ".github" / "prompts" / "developer-agent.prompt.md"),
             "qa": read_text(ROOT / ".github" / "prompts" / "qa-agent.prompt.md"),
         }
-        shared = "\n\n".join(
-            [
-                "Global Copilot Instructions:",
-                global_inst,
-                "Workflow:",
-                workflow,
-                "Work Item Template:",
-                wi_template,
-                "PR Template:",
-                pr_template,
-            ]
-        )
+        shared_parts = [
+            "Global Copilot Instructions:",
+            global_inst,
+            "Workflow:",
+            workflow,
+            "Work Item Template:",
+            wi_template,
+            "PR Template:",
+            pr_template,
+        ]
+        if skills:
+            shared_parts.append(skills)
+        shared = "\n\n".join(shared_parts)
         return {k: (v, shared) for k, v in roles.items()}
 
     raise ValueError(f"Unknown profile: {profile}")

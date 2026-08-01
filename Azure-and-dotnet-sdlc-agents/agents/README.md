@@ -15,6 +15,8 @@ Use each file as a system prompt (or role definition) in your agent platform.
 - `devops-agent.md`: Azure infrastructure, Terraform, and Azure Pipelines setup
 - `developer-agent.md`: .NET 10 service implementation with unit/integration tests
 - `qa-agent.md`: smoke/API/regression/e2e quality coverage
+- `core/`: optional core prompt files for each role
+- `skills/`: optional shared skills docs for agent behavior
 - `workflow.md`: handoffs, work item lifecycle, and Definition of Done
 - `codex/`: Codex-specific configuration pack
 - `templates/`: reusable work item and PR templates

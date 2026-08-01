@@ -11,6 +11,10 @@ Multi-agent SDLC starter kits for Architect, DevOps, Developer, and QA workflows
 Each pack includes:
 
 - `agents/` role prompts and workflow
+- `agent-core/` shared repo-level agent role definitions for Architect, DevOps, Developer, and QA
+- `agents/core/` optional pack-level core prompts for each agent role
+- `agents/skills/` optional pack-level shared skills documentation for agent behavior
+- `.github/skills/` reusable repository-level skills for agent orchestration
 - `agents/codex/` Codex-ready system prompts
 - `agents/templates/` work item + PR templates
 - `automations/` recurring automation assets

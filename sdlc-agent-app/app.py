@@ -5,41 +5,40 @@ import os
 import sys
 
 from config import ROOT, load_app_config
+from input import InputReader
+from output import OutputWriter
 from prompts import build_prompts
 from providers import GitHubModelsClient, ModelClientRoleAgentFactory, OpenAiClient
-from ui import ask_choice, ask_multiline
 from workflow import WorkflowRunner
 
 
 def main() -> int:
-    print("\nSDLC Agent App (interactive)\n")
-    cfg = load_app_config()
-    pack_key = ask_choice("Pack", ("github", "azure"), "github")
-    profile = ask_choice("Profile", ("codex", "copilot"), "codex")
-    provider = ask_choice("Provider", ("openai", "github-models"), "openai")
-    preset = ask_choice("Model preset", ("quality", "balanced", "fast"), "balanced")
+    ui = InputReader()
+    ui.write_line("\nSDLC Agent App (interactive)\n")
 
-    custom_model = input("Explicit model (optional, press Enter to use preset): ").strip()
-    model = custom_model if custom_model else cfg.model_presets[provider][preset]
+    cfg = load_app_config()
+    pack_key = ui.ask_choice("Pack", ("github", "azure"), "github")
+    profile = ui.ask_choice("Profile", ("codex", "copilot"), "codex")
+    provider = ui.ask_choice("Provider", ("openai", "github-models"), "openai")
+    preset = ui.ask_choice("Model preset", ("quality", "balanced", "fast"), "balanced")
+
+    model = ui.ask_optional("Explicit model (optional, press Enter to use preset):", cfg.model_presets[provider][preset])
 
     pack_root = cfg.packs[pack_key]
     out_dir = pack_root / "automations" / profile / "outbox"
     provider_cfg = cfg.providers[provider]
 
+    token = (os.environ.get(provider_cfg.token_env) or "").strip()
+    if not token:
+        ui.write_line(f"ERROR: {provider_cfg.token_env} is not set.")
+        return 2
+
     if provider == "openai":
-        token = (os.environ.get(provider_cfg.token_env) or "").strip()
-        if not token:
-            print(f"ERROR: {provider_cfg.token_env} is not set.")
-            return 2
-        base_url = input("OpenAI base URL (optional): ").strip() or provider_cfg.base_url
+        base_url = ui.ask_optional("OpenAI base URL (optional):", provider_cfg.base_url)
         client = OpenAiClient(api_key=token, base_url=base_url, timeout_sec=provider_cfg.timeout_sec)
     else:
-        token = (os.environ.get(provider_cfg.token_env) or "").strip()
-        if not token:
-            print(f"ERROR: {provider_cfg.token_env} is not set.")
-            return 2
-        base_url = input("GitHub Models base URL (optional): ").strip() or provider_cfg.base_url
-        github_org = input("GitHub org (optional, for org-scoped endpoint): ").strip()
+        base_url = ui.ask_optional("GitHub Models base URL (optional):", provider_cfg.base_url)
+        github_org = ui.ask_optional("GitHub org (optional, for org-scoped endpoint):", "")
         client = GitHubModelsClient(
             token=token,
             base_url=base_url,
@@ -50,8 +49,9 @@ def main() -> int:
 
     agent_factory = ModelClientRoleAgentFactory(model_client=client, model_name=model)
     prompts = build_prompts(ROOT, pack_root, profile)
-    feature = ask_multiline("Feature request")
+    feature = ui.ask_multiline("Feature request")
 
+    writer = OutputWriter(out_dir)
     runner = WorkflowRunner(
         agent_factory=agent_factory,
         prompts=prompts,
@@ -59,12 +59,14 @@ def main() -> int:
         profile=profile,
         feature=feature,
         model_name=model,
+        ui=ui,
+        output_writer=writer,
     )
     files = runner.run(pack_key=pack_key, provider=provider)
 
-    print("\nDone. Generated output paths:")
-    for f in files:
-        print(f"- {f}")
+    ui.write_line("\nDone. Generated output paths:")
+    for file in files:
+        ui.write_line(f"- {file}")
     return 0
 
 

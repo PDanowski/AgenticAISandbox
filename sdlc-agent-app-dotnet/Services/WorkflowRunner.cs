@@ -2,15 +2,37 @@ using SdlcAgentApp.Core;
 
 namespace SdlcAgentApp.Services;
 
-public sealed class WorkflowRunner(
-    ConsoleUi ui,
-    IRoleAgentFactory agentFactory,
-    Dictionary<string, RolePrompt> prompts,
-    OutputWriter outputWriter,
-    string feature,
-    string profile,
-    string timestamp)
+public sealed class WorkflowRunner
 {
+    private readonly IUserInterface _ui;
+    private readonly IRoleAgentFactory _agentFactory;
+    private readonly Dictionary<string, RolePrompt> _prompts;
+    private readonly IOutputWriter _outputWriter;
+    private readonly string _feature;
+    private readonly string _profile;
+    private readonly string _timestamp;
+    private readonly string _modelName;
+
+    public WorkflowRunner(
+        IUserInterface ui,
+        IRoleAgentFactory agentFactory,
+        Dictionary<string, RolePrompt> prompts,
+        IOutputWriter outputWriter,
+        string feature,
+        string profile,
+        string timestamp,
+        string modelName)
+    {
+        _ui = ui;
+        _agentFactory = agentFactory;
+        _prompts = prompts;
+        _outputWriter = outputWriter;
+        _feature = feature;
+        _profile = profile;
+        _timestamp = timestamp;
+        _modelName = modelName;
+    }
+
     public async Task<IReadOnlyList<string>> RunAsync(string packKey, string provider)
     {
         var files = new List<string>();
@@ -30,10 +52,11 @@ public sealed class WorkflowRunner(
         var summary = $"""
         # SDLC App Run Summary
 
-        - Timestamp: {timestamp}
+        - Timestamp: {_timestamp}
         - Pack: {packKey}
-        - Profile: {profile}
+        - Profile: {_profile}
         - Provider: {provider}
+        - Model: {_modelName}
 
         ## Output Files
         - Architect: {archPath}
@@ -41,22 +64,23 @@ public sealed class WorkflowRunner(
         - Developer: {developerPath}
         - QA: {qaPath}
         """;
-        files.Add(outputWriter.Write($"{timestamp}-{profile}-app-summary.md", summary));
+        files.Add(_outputWriter.Write($"{_timestamp}-{_profile}-app-summary.md", summary));
         return files;
     }
 
-    private async Task<(string Out, string Path)> RunArchitectAsync()
+    private async Task<(string Output, string Path)> RunArchitectAsync()
     {
-        Console.WriteLine();
-        Console.WriteLine("Phase 1: Architect");
-        var feedback = string.Empty;
+        _ui.WriteLine(string.Empty);
+        _ui.WriteLine("Phase 1: Architect");
+
         var round = 0;
+        var feedback = string.Empty;
         while (true)
         {
             round++;
             var prompt = $"""
             Feature request:
-            {feature}
+            {_feature}
 
             Prior feedback to address:
             {(string.IsNullOrWhiteSpace(feedback) ? "none" : feedback)}
@@ -70,26 +94,28 @@ public sealed class WorkflowRunner(
             6) PR architecture checklist
             7) Gate A approval summary
             """;
+
             var output = await CallRoleAsync("architect", prompt);
-            var path = outputWriter.Write($"{timestamp}-{profile}-architect-r{round}.md", output);
-            Console.WriteLine($"Architect output: {path}");
-            if (ui.AskYesNo("Approve architecture (Gate A)?", false))
+            var path = _outputWriter.Write($"{_timestamp}-{_profile}-architect-r{round}.md", output);
+            _ui.WriteLine($"Architect output: {path}");
+
+            if (_ui.AskYesNo("Approve architecture (Gate A)?", defaultYes: false))
             {
                 return (output, path);
             }
 
-            feedback = ui.AskRequired("Provide architecture rework feedback");
+            feedback = _ui.AskRequired("Provide architecture rework feedback");
         }
     }
 
     private async Task<(string DevOpsOut, string DevOpsPath, string DeveloperOut, string DeveloperPath)> RunPlanningAsync(string architectOut)
     {
-        Console.WriteLine();
-        Console.WriteLine("Phase 2: DevOps + Developer planning");
+        _ui.WriteLine(string.Empty);
+        _ui.WriteLine("Phase 2: DevOps + Developer planning");
 
         var devopsPrompt = $"""
         Feature request:
-        {feature}
+        {_feature}
 
         Approved architecture:
         {architectOut}
@@ -98,7 +124,7 @@ public sealed class WorkflowRunner(
         """;
         var developerPrompt = $"""
         Feature request:
-        {feature}
+        {_feature}
 
         Approved architecture:
         {architectOut}
@@ -109,23 +135,24 @@ public sealed class WorkflowRunner(
         var devopsTask = CallRoleAsync("devops", devopsPrompt);
         var developerTask = CallRoleAsync("developer", developerPrompt);
         await Task.WhenAll(devopsTask, developerTask);
+
         var devopsOut = devopsTask.Result;
         var developerOut = developerTask.Result;
 
         var devopsRound = 1;
         var developerRound = 1;
-        var devopsPath = outputWriter.Write($"{timestamp}-{profile}-devops-r{devopsRound}.md", devopsOut);
-        var developerPath = outputWriter.Write($"{timestamp}-{profile}-developer-r{developerRound}.md", developerOut);
-        Console.WriteLine($"DevOps plan: {devopsPath}");
-        Console.WriteLine($"Developer plan: {developerPath}");
+        var devopsPath = _outputWriter.Write($"{_timestamp}-{_profile}-devops-r{devopsRound}.md", devopsOut);
+        var developerPath = _outputWriter.Write($"{_timestamp}-{_profile}-developer-r{developerRound}.md", developerOut);
+        _ui.WriteLine($"DevOps plan: {devopsPath}");
+        _ui.WriteLine($"Developer plan: {developerPath}");
 
-        while (!ui.AskYesNo("Approve DevOps plan (Gate B)?", false))
+        while (!_ui.AskYesNo("Approve DevOps plan (Gate B)?", defaultYes: false))
         {
-            var feedback = ui.AskRequired("Provide DevOps rework feedback");
+            var feedback = _ui.AskRequired("Provide DevOps rework feedback");
             devopsRound++;
             var reworkPrompt = $"""
             Feature request:
-            {feature}
+            {_feature}
 
             Approved architecture:
             {architectOut}
@@ -136,17 +163,17 @@ public sealed class WorkflowRunner(
             Produce revised DevOps plan and Gate B approval summary.
             """;
             devopsOut = await CallRoleAsync("devops", reworkPrompt);
-            devopsPath = outputWriter.Write($"{timestamp}-{profile}-devops-r{devopsRound}.md", devopsOut);
-            Console.WriteLine($"Revised DevOps plan: {devopsPath}");
+            devopsPath = _outputWriter.Write($"{_timestamp}-{_profile}-devops-r{devopsRound}.md", devopsOut);
+            _ui.WriteLine($"Revised DevOps plan: {devopsPath}");
         }
 
-        while (!ui.AskYesNo("Approve Developer plan (Gate C)?", false))
+        while (!_ui.AskYesNo("Approve Developer plan (Gate C)?", defaultYes: false))
         {
-            var feedback = ui.AskRequired("Provide Developer rework feedback");
+            var feedback = _ui.AskRequired("Provide Developer rework feedback");
             developerRound++;
             var reworkPrompt = $"""
             Feature request:
-            {feature}
+            {_feature}
 
             Approved architecture:
             {architectOut}
@@ -157,8 +184,8 @@ public sealed class WorkflowRunner(
             Produce revised Developer plan and Gate C approval summary.
             """;
             developerOut = await CallRoleAsync("developer", reworkPrompt);
-            developerPath = outputWriter.Write($"{timestamp}-{profile}-developer-r{developerRound}.md", developerOut);
-            Console.WriteLine($"Revised Developer plan: {developerPath}");
+            developerPath = _outputWriter.Write($"{_timestamp}-{_profile}-developer-r{developerRound}.md", developerOut);
+            _ui.WriteLine($"Revised Developer plan: {developerPath}");
         }
 
         return (devopsOut, devopsPath, developerOut, developerPath);
@@ -166,21 +193,22 @@ public sealed class WorkflowRunner(
 
     private void WaitForImplementationGate()
     {
-        Console.WriteLine();
-        Console.WriteLine("Phase 3: Implementation review gate");
-        while (!ui.AskYesNo("Have implementation PRs been reviewed and approved/merged (Gate D)?", false))
+        _ui.WriteLine(string.Empty);
+        _ui.WriteLine("Phase 3: Implementation review gate");
+        while (!_ui.AskYesNo("Have implementation PRs been reviewed and approved/merged (Gate D)?", defaultYes: false))
         {
-            Console.WriteLine("Waiting for implementation review/merge. Complete reviews, then approve Gate D to continue.");
+            _ui.WriteLine("Waiting for implementation review/merge. Complete reviews, then approve Gate D to continue.");
         }
     }
 
-    private async Task<(string Out, string Path)> RunQaAsync(string architectOut, string devopsOut, string developerOut)
+    private async Task<(string Output, string Path)> RunQaAsync(string architectOut, string devopsOut, string developerOut)
     {
-        Console.WriteLine();
-        Console.WriteLine("Phase 4: QA rework and test plan");
+        _ui.WriteLine(string.Empty);
+        _ui.WriteLine("Phase 4: QA rework and test plan");
+
         var qaPrompt = $"""
         Feature request:
-        {feature}
+        {_feature}
 
         Approved architecture:
         {architectOut}
@@ -199,16 +227,17 @@ public sealed class WorkflowRunner(
         5) Defect/risk reporting model
         6) Release recommendation criteria and residual risks
         """;
+
         var output = await CallRoleAsync("qa", qaPrompt);
-        var path = outputWriter.Write($"{timestamp}-{profile}-qa.md", output);
-        Console.WriteLine($"QA output: {path}");
+        var path = _outputWriter.Write($"{_timestamp}-{_profile}-qa.md", output);
+        _ui.WriteLine($"QA output: {path}");
         return (output, path);
     }
 
     private Task<string> CallRoleAsync(string role, string userPrompt)
     {
-        var rp = prompts[role];
-        var agent = agentFactory.Create(role, rp.ComposeSystemPrompt());
+        var systemPrompt = _prompts[role].ComposeSystemPrompt();
+        var agent = _agentFactory.Create(role, systemPrompt);
         return agent.RunAsync(userPrompt);
     }
 }

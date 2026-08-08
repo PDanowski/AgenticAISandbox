@@ -1,6 +1,11 @@
 # SDLC Agent App
 
 Interactive Python app that runs the SDLC agent workflow with approval gates and role-based agent execution.
+The app now follows cleaner SOLID layering:
+- `InputReader` for user interaction
+- `OutputWriter` for file output
+- `RoleAgentFactory` for role-specific model agents
+- `WorkflowRunner` for step orchestration
 
 Flow:
 

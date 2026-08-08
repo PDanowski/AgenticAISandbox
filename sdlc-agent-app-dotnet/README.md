@@ -1,6 +1,7 @@
 # SDLC Agent App (.NET)
 
 Interactive `.NET 10` SDLC app that runs the Architect, DevOps, Developer, and QA workflow with approval gates.
+The application now uses a more SOLID structure with separate UI, prompt loading, agent factory, workflow orchestration, and output writer components.
 
 Flow:
 

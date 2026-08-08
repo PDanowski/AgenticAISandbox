@@ -1,6 +1,11 @@
 namespace SdlcAgentApp.Services;
 
-public sealed class OutputWriter
+public interface IOutputWriter
+{
+    string Write(string fileName, string content);
+}
+
+public sealed class OutputWriter : IOutputWriter
 {
     private readonly string _outDir;
 

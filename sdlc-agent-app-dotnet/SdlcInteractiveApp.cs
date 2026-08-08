@@ -9,25 +9,20 @@ public static class SdlcInteractiveApp
     {
         try
         {
-            var ui = new ConsoleUi();
-            Console.WriteLine();
-            Console.WriteLine("SDLC Agent App (.NET interactive)");
-            Console.WriteLine();
+            IUserInterface ui = new ConsoleUi();
+            ui.WriteLine(string.Empty);
+            ui.WriteLine("SDLC Agent App (.NET interactive)");
+            ui.WriteLine(string.Empty);
 
             var resolver = new PathResolver();
             var repoRoot = resolver.FindRepoRoot();
             var appConfig = AppConfig.LoadFromFile(Path.Combine(repoRoot, "sdlc-agent-app-dotnet", "appsettings.json"));
 
             var packKey = ui.AskChoice("Pack", appConfig.Packs.Keys.Order().ToList(), "github");
-            var profile = ui.AskChoice("Profile", ["codex", "copilot"], "codex");
+            var profile = ui.AskChoice("Profile", new[] { "codex", "copilot" }, "codex");
             var provider = ui.AskChoice("Provider", appConfig.Providers.Keys.Order().ToList(), "openai");
-            var preset = ui.AskChoice("Model preset", ["quality", "balanced", "fast"], "balanced");
-
-            Console.Write("Explicit model (optional, press Enter to use preset): ");
-            var explicitModel = (Console.ReadLine() ?? string.Empty).Trim();
-            var model = string.IsNullOrWhiteSpace(explicitModel)
-                ? appConfig.ModelPresets[provider][preset]
-                : explicitModel;
+            var preset = ui.AskChoice("Model preset", new[] { "quality", "balanced", "fast" }, "balanced");
+            var model = AskModel(ui, appConfig, provider, preset);
 
             var packRoot = Path.Combine(repoRoot, appConfig.Packs[packKey]);
             var outDir = Path.Combine(packRoot, "automations", profile, "outbox");
@@ -39,14 +34,14 @@ public static class SdlcInteractiveApp
             var feature = ui.AskMultiLine("Feature request");
 
             var writer = new OutputWriter(outDir);
-            var workflow = new WorkflowRunner(ui, agentFactory, prompts, writer, feature, profile, timestamp);
+            var workflow = new WorkflowRunner(ui, agentFactory, prompts, writer, feature, profile, timestamp, model);
             var files = await workflow.RunAsync(packKey, provider);
 
-            Console.WriteLine();
-            Console.WriteLine("Done. Generated output paths:");
+            ui.WriteLine(string.Empty);
+            ui.WriteLine("Done. Generated output paths:");
             foreach (var file in files)
             {
-                Console.WriteLine($"- {file}");
+                ui.WriteLine($"- {file}");
             }
 
             return 0;
@@ -63,7 +58,16 @@ public static class SdlcInteractiveApp
         }
     }
 
-    private static IRoleAgentFactory BuildAgentFactory(ConsoleUi ui, string provider, AppConfig appConfig, string model)
+    private static string AskModel(IUserInterface ui, AppConfig appConfig, string provider, string preset)
+    {
+        ui.WriteLine("Explicit model (optional, press Enter to use preset):");
+        var explicitModel = (Console.ReadLine() ?? string.Empty).Trim();
+        return string.IsNullOrWhiteSpace(explicitModel)
+            ? appConfig.ModelPresets[provider][preset]
+            : explicitModel;
+    }
+
+    private static IRoleAgentFactory BuildAgentFactory(IUserInterface ui, string provider, AppConfig appConfig, string model)
     {
         var providerCfg = appConfig.Providers[provider];
         if (provider == "openai")
@@ -73,12 +77,8 @@ public static class SdlcInteractiveApp
             {
                 throw new InvalidOperationException($"{providerCfg.TokenEnv} is not set.");
             }
-            Console.Write("OpenAI base URL (optional): ");
-            var baseUrl = (Console.ReadLine() ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(baseUrl))
-            {
-                baseUrl = providerCfg.BaseUrl;
-            }
+
+            var baseUrl = ui.AskOptional("OpenAI base URL (optional):", providerCfg.BaseUrl);
             return new OpenAiRoleAgentFactory(token, baseUrl, model);
         }
 
@@ -87,14 +87,9 @@ public static class SdlcInteractiveApp
         {
             throw new InvalidOperationException($"{providerCfg.TokenEnv} is not set.");
         }
-        Console.Write("GitHub Models base URL (optional): ");
-        var ghBaseUrl = (Console.ReadLine() ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(ghBaseUrl))
-        {
-            ghBaseUrl = providerCfg.BaseUrl;
-        }
-        Console.Write("GitHub org (optional): ");
-        var githubOrg = (Console.ReadLine() ?? string.Empty).Trim();
+
+        var ghBaseUrl = ui.AskOptional("GitHub Models base URL (optional):", providerCfg.BaseUrl);
+        var githubOrg = ui.AskOptional("GitHub org (optional):", string.Empty);
         var ghClient = new HttpClient { Timeout = TimeSpan.FromSeconds(providerCfg.TimeoutSec) };
         return new GitHubRoleAgentFactory(ghClient, githubToken, ghBaseUrl, githubOrg, providerCfg.GitHubApiVersion, model);
     }

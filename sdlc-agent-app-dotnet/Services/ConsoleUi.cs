@@ -1,6 +1,16 @@
 namespace SdlcAgentApp.Services;
 
-public sealed class ConsoleUi
+public interface IUserInterface
+{
+    string AskChoice(string label, IReadOnlyList<string> options, string @default);
+    bool AskYesNo(string label, bool defaultYes);
+    string AskRequired(string label);
+    string AskMultiLine(string label);
+    string AskOptional(string label, string defaultValue);
+    void WriteLine(string message);
+}
+
+public sealed class ConsoleUi : IUserInterface
 {
     public string AskChoice(string label, IReadOnlyList<string> options, string @default)
     {
@@ -71,12 +81,23 @@ public sealed class ConsoleUi
             }
             lines.Add(line);
         }
+
         var text = string.Join(Environment.NewLine, lines).Trim();
         if (string.IsNullOrWhiteSpace(text))
         {
             throw new InvalidOperationException("Input cannot be empty.");
         }
+
         return text;
     }
+
+    public string AskOptional(string label, string defaultValue)
+    {
+        Console.Write($"{label} ");
+        var raw = (Console.ReadLine() ?? string.Empty).Trim();
+        return string.IsNullOrWhiteSpace(raw) ? defaultValue : raw;
+    }
+
+    public void WriteLine(string message) => Console.WriteLine(message);
 }
 

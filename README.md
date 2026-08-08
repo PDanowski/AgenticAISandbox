@@ -6,8 +6,8 @@ AgenticAISandbox is a multi-agent SDLC starter repository for building and runni
 
 - `Azure-and-dotnet-sdlc-agents/`: Azure-focused SDLC pack with .NET agent prompts, workflows, and runner scripts.
 - `GitHub-and-dotnet-sdlc-agents/`: GitHub Actions/Codespaces-focused SDLC pack with .NET agent prompts, workflows, and runner scripts.
-- `sdlc-agent-app/`: Python interactive SDLC app with approval gates and role-agent workflow.
-- `sdlc-agent-app-dotnet/`: .NET interactive SDLC app with approval gates and role-agent workflow.
+- `sdlc-agent-app/`: Python interactive SDLC app with approval gates, role-agent workflow, and SOLID abstractions for input, output, prompt loading, and workflow orchestration.
+- `sdlc-agent-app-dotnet/`: .NET interactive SDLC app with approval gates, role-agent workflow, and SOLID abstractions for UI, prompt loading, model agent factory, and output writing.
 - `sdlc-agent-azure-ai-foundry/`: Azure AI Foundry deployment pattern with orchestrator and service-based agent APIs.
 - `agent-core/`: shared repo-level core prompt definitions for standard SDLC roles.
 - `.github/skills/`: reusable skill docs for agent behavior and orchestration.

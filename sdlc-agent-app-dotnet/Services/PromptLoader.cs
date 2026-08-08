@@ -2,7 +2,12 @@ using SdlcAgentApp.Core;
 
 namespace SdlcAgentApp.Services;
 
-public sealed class PromptLoader
+public interface IPromptLoader
+{
+    Dictionary<string, RolePrompt> BuildPrompts(string repoRoot, string packRoot, string profile);
+}
+
+public sealed class PromptLoader : IPromptLoader
 {
     private static string ReadOptional(string path)
     {
